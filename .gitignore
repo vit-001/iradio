@@ -1,5 +1,5 @@
 # Конфигурация с паролями
-main/config.h
+main/config.cpp
 
 # Сборка и временные файлы
 build/

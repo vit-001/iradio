@@ -16,3 +16,4 @@ dependencies:
   #   public: true
 
   espressif/esp-dsp: ^1.6.1
+  lvgl/lvgl: ^8.3.11  
