@@ -31,9 +31,9 @@ static const char* mode_names[] = {
 };
 
 static EncoderMode current_mode = MODE_VOLUME;
-static int bass_value = 0;      // -40..+6
-static int mid_value = 0;       // -40..+6
-static int treble_value = 0;    // -40..+6
+static int bass_value = TONE_BASS;      // -40..+6
+static int mid_value = TONE_MID;       // -40..+6
+static int treble_value = TONE_TREBLE;    // -40..+6
 static int current_station = 0;
 
 // Список радиостанций
@@ -167,7 +167,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                 case MODE_BASS:
                     bass_value++;
                     if (bass_value > 6) bass_value = 6;
-                    audio.setTone(bass_value, 0, treble_value);
+                    audio.setTone(bass_value, mid_value, treble_value);
                     if (bass_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
@@ -187,7 +187,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                 case MODE_TREBLE:
                     treble_value++;
                     if (treble_value > 6) treble_value = 6;
-                    audio.setTone(bass_value, 0, treble_value);
+                    audio.setTone(bass_value, mid_value, treble_value);
                     if (treble_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "TREBLE: %+d dB", treble_value);
@@ -216,7 +216,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                 case MODE_BASS:
                     bass_value--;
                     if (bass_value < -40) bass_value = -40;
-                    audio.setTone(bass_value, 0, treble_value);
+                    audio.setTone(bass_value, mid_value, treble_value);
                     if (bass_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
@@ -236,7 +236,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                 case MODE_TREBLE:
                     treble_value--;
                     if (treble_value < -40) treble_value = -40;
-                    audio.setTone(bass_value, 0, treble_value);
+                    audio.setTone(bass_value, mid_value, treble_value);
                     if (treble_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "TREBLE: %+d dB", treble_value);
@@ -264,7 +264,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
             } else if (current_mode == MODE_BASS) {
                 // Сброс басов в 0
                 bass_value = 0;
-                audio.setTone(bass_value, 0, treble_value);
+                audio.setTone(bass_value, mid_value, treble_value);
                 if (bass_label) {
                     char buf[32];
                     snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
@@ -282,7 +282,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
             } else if (current_mode == MODE_TREBLE) {
                 // Сброс высоких в 0
                 treble_value = 0;
-                audio.setTone(bass_value, 0, treble_value);
+                audio.setTone(bass_value, mid_value, treble_value);
                 if (treble_label) {
                     char buf[32];
                     snprintf(buf, sizeof(buf), "TREBLE: %+d dB", treble_value);

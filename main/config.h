@@ -34,7 +34,7 @@ extern const char* radio_url;
 
 // Настройки тембра
 #define TONE_BASS   3
-#define TONE_MID    0
+#define TONE_MID    -6
 #define TONE_TREBLE 2
 
 // Начальная громкость (0-21)
