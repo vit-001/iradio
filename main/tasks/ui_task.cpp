@@ -6,6 +6,8 @@
 #include "esp_log.h"
 #include "lvgl.h"
 
+LV_FONT_DECLARE(my_font_16);
+
 static const char* TAG = "UI_TASK";
 static TaskHandle_t s_uiTaskHandle = NULL;
 static Encoder* s_encoder = nullptr;
@@ -15,6 +17,7 @@ enum EncoderMode {
     MODE_VOLUME = 0,
     MODE_STATION,
     MODE_BASS,
+    MODE_MID,
     MODE_TREBLE,
     MODE_COUNT
 };
@@ -23,11 +26,13 @@ static const char* mode_names[] = {
     "VOLUME",
     "STATION",
     "BASS",
+    "MID",
     "TREBLE"
 };
 
 static EncoderMode current_mode = MODE_VOLUME;
 static int bass_value = 0;      // -40..+6
+static int mid_value = 0;       // -40..+6
 static int treble_value = 0;    // -40..+6
 static int current_station = 0;
 
@@ -53,6 +58,7 @@ static lv_obj_t* volume_label = NULL;
 static lv_obj_t* status_label = NULL;
 static lv_obj_t* mode_label = NULL;
 static lv_obj_t* bass_label = NULL;
+static lv_obj_t* mid_label = NULL;
 static lv_obj_t* treble_label = NULL;
 
 // Предварительное объявление функции
@@ -91,6 +97,7 @@ static void updateModeDisplay() {
     if (volume_bar) lv_obj_add_flag(volume_bar, LV_OBJ_FLAG_HIDDEN);
     if (volume_label) lv_obj_add_flag(volume_label, LV_OBJ_FLAG_HIDDEN);
     if (bass_label) lv_obj_add_flag(bass_label, LV_OBJ_FLAG_HIDDEN);
+    if (mid_label) lv_obj_add_flag(mid_label, LV_OBJ_FLAG_HIDDEN);
     if (treble_label) lv_obj_add_flag(treble_label, LV_OBJ_FLAG_HIDDEN);
     
     // Показываем нужные элементы в зависимости от режима
@@ -113,6 +120,15 @@ static void updateModeDisplay() {
                 snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
                 lv_label_set_text(bass_label, buf);
                 lv_obj_align(bass_label, LV_ALIGN_CENTER, 0, 0);
+            }
+            break;
+        case MODE_MID:
+            if (mid_label) {
+                lv_obj_clear_flag(mid_label, LV_OBJ_FLAG_HIDDEN);
+                char buf[32];
+                snprintf(buf, sizeof(buf), "MID: %+d dB", mid_value);
+                lv_label_set_text(mid_label, buf);
+                lv_obj_align(mid_label, LV_ALIGN_CENTER, 0, 0);
             }
             break;
         case MODE_TREBLE:
@@ -158,6 +174,16 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                         lv_label_set_text(bass_label, buf);
                     }
                     break;
+                case MODE_MID:
+                    mid_value++;
+                    if (mid_value > 6) mid_value = 6;
+                    audio.setTone(bass_value, mid_value, treble_value);
+                    if (mid_label) {
+                        char buf[32];
+                        snprintf(buf, sizeof(buf), "MID: %+d dB", mid_value);
+                        lv_label_set_text(mid_label, buf);
+                    }
+                    break;
                 case MODE_TREBLE:
                     treble_value++;
                     if (treble_value > 6) treble_value = 6;
@@ -197,6 +223,16 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                         lv_label_set_text(bass_label, buf);
                     }
                     break;
+                case MODE_MID:
+                    mid_value--;
+                    if (mid_value < -40) mid_value = -40;
+                    audio.setTone(bass_value, mid_value, treble_value);
+                    if (mid_label) {
+                        char buf[32];
+                        snprintf(buf, sizeof(buf), "MID: %+d dB", mid_value);
+                        lv_label_set_text(mid_label, buf);
+                    }
+                    break;
                 case MODE_TREBLE:
                     treble_value--;
                     if (treble_value < -40) treble_value = -40;
@@ -233,6 +269,15 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                     char buf[32];
                     snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
                     lv_label_set_text(bass_label, buf);
+                }
+            } else if (current_mode == MODE_MID) {
+                // Сброс средних в 0
+                mid_value = 0;
+                audio.setTone(bass_value, mid_value, treble_value);
+                if (mid_label) {
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "MID: %+d dB", mid_value);
+                    lv_label_set_text(mid_label, buf);
                 }
             } else if (current_mode == MODE_TREBLE) {
                 // Сброс высоких в 0
@@ -271,7 +316,7 @@ static void create_ui(void) {
     // Режим (отображается в правом верхнем углу)
     mode_label = lv_label_create(scr);
     lv_label_set_text(mode_label, mode_names[current_mode]);
-    lv_obj_set_style_text_font(mode_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(mode_label, &my_font_16, 0);
     lv_obj_set_style_text_color(mode_label, lv_color_hex(0x00FFFF), 0);
     lv_obj_align(mode_label, LV_ALIGN_TOP_RIGHT, -10, 10);
     
@@ -285,7 +330,7 @@ static void create_ui(void) {
     // Название трека
     song_label = lv_label_create(scr);
     lv_label_set_text(song_label, "Loading...");
-    lv_obj_set_style_text_font(song_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(song_label, &my_font_16, 0);
     lv_obj_set_style_text_color(song_label, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(song_label, LV_ALIGN_CENTER, 0, -20);
     
@@ -302,29 +347,37 @@ static void create_ui(void) {
     char vol_buf[32];
     snprintf(vol_buf, sizeof(vol_buf), "VOLUME: %d/21", audio.getVolume());
     lv_label_set_text(volume_label, vol_buf);
-    lv_obj_set_style_text_font(volume_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(volume_label, &my_font_16, 0);
     lv_obj_set_style_text_color(volume_label, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align_to(volume_label, volume_bar, LV_ALIGN_OUT_TOP_MID, 0, -5);
     
     // Статус воспроизведения
     status_label = lv_label_create(scr);
     lv_label_set_text(status_label, audio.isPlaying() ? "▶ PLAYING" : "⏸ PAUSED");
-    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(status_label, &my_font_16, 0);
     lv_obj_set_style_text_color(status_label, audio.isPlaying() ? lv_color_hex(0x00FF00) : lv_color_hex(0xFF0000), 0);
     lv_obj_align(status_label, LV_ALIGN_BOTTOM_MID, 0, -20);
     
     // Басы (скрыты по умолчанию)
     bass_label = lv_label_create(scr);
     lv_label_set_text(bass_label, "BASS: 0 dB");
-    lv_obj_set_style_text_font(bass_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(bass_label, &my_font_16, 0);
     lv_obj_set_style_text_color(bass_label, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(bass_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_add_flag(bass_label, LV_OBJ_FLAG_HIDDEN);
-    
+ 
+    // Средние (скрыты по умолчанию)
+    mid_label = lv_label_create(scr);
+    lv_label_set_text(mid_label, "MID: 0 dB");
+    lv_obj_set_style_text_font(mid_label, &my_font_16, 0);
+    lv_obj_set_style_text_color(mid_label, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_align(mid_label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_add_flag(mid_label, LV_OBJ_FLAG_HIDDEN);
+
     // Высокие (скрыты по умолчанию)
     treble_label = lv_label_create(scr);
     lv_label_set_text(treble_label, "TREBLE: 0 dB");
-    lv_obj_set_style_text_font(treble_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(treble_label, &my_font_16, 0);
     lv_obj_set_style_text_color(treble_label, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(treble_label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_add_flag(treble_label, LV_OBJ_FLAG_HIDDEN);

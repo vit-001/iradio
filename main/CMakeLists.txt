@@ -2,6 +2,7 @@ idf_component_register(
     SRCS 
         main.cpp
         config.cpp
+        my_font_16.c
         tasks/audio_task.cpp
         tasks/ui_task.cpp
         drivers/encoder/encoder.cpp

@@ -68,7 +68,7 @@ bool display_driver_init(void) {
     // 4. Панель ST7789
     esp_lcd_panel_dev_config_t panel_config = {};
     panel_config.reset_gpio_num = LCD_RST;
-    panel_config.rgb_endian = LCD_RGB_ENDIAN_BGR;
+    panel_config.rgb_endian = LCD_RGB_ENDIAN_RGB;
     panel_config.bits_per_pixel = 16;
     // panel_config.flags не трогаем
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
