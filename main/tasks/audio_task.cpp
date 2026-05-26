@@ -1,12 +1,17 @@
 #include "audio_task.h"
 #include "config.h"
+#include "stations.h"
 #include "drivers/audio/audio_manager.h"
+#include "drivers/nvs/nvs_manager.h"
+#include "messages/audio_messages.h"
 #include "esp_log.h"
 #include "Arduino.h"
 
 static const char* TAG = "AUDIO_TASK";
 static TaskHandle_t s_audioTaskHandle = NULL;
 static volatile bool s_audioTaskRunning = true;
+
+extern QueueHandle_t audioQueue;
 
 // Глобальный callback для информации от библиотеки Audio
 void my_audio_info(Audio::msg_t m) {
@@ -38,6 +43,38 @@ void my_audio_info(Audio::msg_t m) {
         default:
             ESP_LOGD(TAG, "Event %d: %s", m.e, m.msg);
             break;
+    }
+}
+
+// Обработка команд из очереди
+void processAudioCommands(AudioManager& audio) {
+    AudioMessage msg;
+    
+    // Проверяем очередь (не блокируем)
+    if (xQueueReceive(audioQueue, &msg, 0) == pdTRUE) {
+        switch (msg.type) {
+            case CMD_SET_VOLUME:
+                audio.setVolume(msg.value1);
+                ESP_LOGI(TAG, "Volume set to %d", msg.value1);
+                break;
+                
+            case CMD_SET_TONE:
+                audio.setTone(msg.value1, msg.value2, msg.value3);
+                ESP_LOGI(TAG, "Tone set: B=%d, M=%d, T=%d", msg.value1, msg.value2, msg.value3);
+                break;
+                
+            case CMD_PLAY_URL:
+                ESP_LOGI(TAG, "Playing URL: %s", msg.url);
+                audio.connectToStream(msg.url);
+                break;
+                
+            case CMD_PLAY_PAUSE:
+                audio.playPause();
+                break;
+                
+            default:
+                break;
+        }
     }
 }
 
@@ -78,13 +115,17 @@ void audioTaskFunction(void* parameter) {
     // Основной цикл
     unsigned long lastLoopLog = 0;
     while (s_audioTaskRunning) {
+        // Обрабатываем команды из очереди
+        processAudioCommands(audio);
+
+        // Аудио-цикл
         audio.loop();
         
-        if (millis() - lastLoopLog > 30000) {
-            lastLoopLog = millis();
-            ESP_LOGD(TAG, "Audio loop running, playing: %s", 
-                audio.isPlaying() ? "yes" : "no");
-        }
+        // if (millis() - lastLoopLog > 30000) {
+        //     lastLoopLog = millis();
+        //     ESP_LOGD(TAG, "Audio loop running, playing: %s", 
+        //         audio.isPlaying() ? "yes" : "no");
+        // }
         
         vTaskDelay(pdMS_TO_TICKS(5));
     }

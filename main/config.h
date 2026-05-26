@@ -46,4 +46,8 @@ extern const char* radio_url;
 #define DEBOUNCE_DELAY 100
 #define BUTTON_DELAY   200
 
+
+// Размер очереди для сообщений между задачами
+#define AUDIO_QUEUE_SIZE 10
+
 #endif // CONFIG_H

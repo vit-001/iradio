@@ -7,8 +7,12 @@
 #include "tasks/ui_task.h"
 #include "drivers/audio/audio_manager.h"
 #include "nvs_manager.h"
+#include "messages/audio_messages.h"
 
 static const char* TAG = "MAIN";
+
+// Глобальные очереди
+QueueHandle_t audioQueue = NULL;
 
 void setup() {
     Serial.begin(115200);
@@ -16,10 +20,13 @@ void setup() {
     ESP_LOGI(TAG, "=== ESP32-S3 Internet Radio ===");
     ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
     
+    // Создаём очереди для сообщений (максимум 10 сообщений)
+    audioQueue = xQueueCreate(AUDIO_QUEUE_SIZE, sizeof(AudioMessage));
+
     // Инициализация аудио
     AudioManager::getInstance().begin(I2S_BCLK, I2S_LRC, I2S_DOUT);
-    AudioManager::getInstance().setDefaultVolume(DEFAULT_VOLUME);
-    AudioManager::getInstance().setTone(TONE_BASS, TONE_MID, TONE_TREBLE);
+    // AudioManager::getInstance().setDefaultVolume(DEFAULT_VOLUME);
+    // AudioManager::getInstance().setTone(TONE_BASS, TONE_MID, TONE_TREBLE);
  
     // Инициализация NVS для сохранения настроек
     NVSManager::getInstance().init();    
@@ -37,6 +44,7 @@ void loop() {
     if (millis() - lastCheck > 10000) {
         lastCheck = millis();
         
+        // Мониторинг (опционально)
         // AudioManager& audio = AudioManager::getInstance();
         
         // ESP_LOGI(TAG, "=== System Status ===");

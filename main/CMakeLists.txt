@@ -12,6 +12,7 @@ idf_component_register(
     INCLUDE_DIRS 
         "."
         "tasks"
+        "messages"
         "drivers/encoder"
         "drivers/audio"
         "drivers/display"
