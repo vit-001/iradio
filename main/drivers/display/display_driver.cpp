@@ -78,7 +78,7 @@ bool display_driver_init(void) {
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel_handle, true));
     
     // Настройки для 170x320 в альбомной ориентации
-    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 0, 35));
+    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, LCD_GAP_X, LCD_GAP_Y));
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, false, true));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));

@@ -8,12 +8,14 @@ idf_component_register(
         drivers/encoder/encoder.cpp
         drivers/audio/audio_manager.cpp
         drivers/display/display_driver.cpp
+        drivers/nvs/nvs_manager.cpp
     INCLUDE_DIRS 
         "."
         "tasks"
         "drivers/encoder"
         "drivers/audio"
         "drivers/display"
+        "drivers/nvs"
     REQUIRES 
         Arduino 
         mbedtls 
@@ -24,6 +26,7 @@ idf_component_register(
         esp_lcd
         driver 
         lvgl
+        nvs_flash
 )
 
 target_include_directories(${COMPONENT_TARGET} PRIVATE

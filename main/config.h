@@ -29,7 +29,9 @@ extern const char* radio_url;
 
 // Разрешение дисплея (для ST7789 обычно 240x240 или 240x320)
 #define LCD_H_RES       320
-#define LCD_V_RES       170
+#define LCD_V_RES       240
+#define LCD_GAP_X       0
+#define LCD_GAP_Y       0
 
 
 // Настройки тембра

@@ -3,6 +3,7 @@
 #include "drivers/encoder/encoder.h"
 #include "drivers/audio/audio_manager.h"
 #include "drivers/display/display_driver.h"
+#include "drivers/nvs/nvs_manager.h"
 #include "esp_log.h"
 #include "lvgl.h"
 
@@ -154,6 +155,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
             switch (current_mode) {
                 case MODE_VOLUME:
                     audio.volumeUp();
+                    NVSManager::getInstance().setVolume(audio.getVolume());
                     if (volume_bar) lv_bar_set_value(volume_bar, audio.getVolume(), LV_ANIM_ON);
                     if (volume_label) {
                         char buf[32];
@@ -163,11 +165,13 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                     break;
                 case MODE_STATION:
                     switchStation(1);
+                    NVSManager::getInstance().setStation(current_station);
                     break;
                 case MODE_BASS:
                     bass_value++;
                     if (bass_value > 6) bass_value = 6;
                     audio.setTone(bass_value, mid_value, treble_value);
+                    NVSManager::getInstance().setBass(bass_value);
                     if (bass_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
@@ -178,6 +182,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                     mid_value++;
                     if (mid_value > 6) mid_value = 6;
                     audio.setTone(bass_value, mid_value, treble_value);
+                    NVSManager::getInstance().setMid(mid_value);
                     if (mid_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "MID: %+d dB", mid_value);
@@ -188,6 +193,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                     treble_value++;
                     if (treble_value > 6) treble_value = 6;
                     audio.setTone(bass_value, mid_value, treble_value);
+                    NVSManager::getInstance().setTreble(treble_value);
                     if (treble_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "TREBLE: %+d dB", treble_value);
@@ -203,6 +209,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
             switch (current_mode) {
                 case MODE_VOLUME:
                     audio.volumeDown();
+                    NVSManager::getInstance().setVolume(audio.getVolume());
                     if (volume_bar) lv_bar_set_value(volume_bar, audio.getVolume(), LV_ANIM_ON);
                     if (volume_label) {
                         char buf[32];
@@ -212,11 +219,13 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                     break;
                 case MODE_STATION:
                     switchStation(-1);
+                    NVSManager::getInstance().setStation(current_station);
                     break;
                 case MODE_BASS:
                     bass_value--;
                     if (bass_value < -40) bass_value = -40;
                     audio.setTone(bass_value, mid_value, treble_value);
+                    NVSManager::getInstance().setBass(bass_value);
                     if (bass_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
@@ -227,6 +236,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                     mid_value--;
                     if (mid_value < -40) mid_value = -40;
                     audio.setTone(bass_value, mid_value, treble_value);
+                    NVSManager::getInstance().setMid(mid_value);
                     if (mid_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "MID: %+d dB", mid_value);
@@ -237,6 +247,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                     treble_value--;
                     if (treble_value < -40) treble_value = -40;
                     audio.setTone(bass_value, mid_value, treble_value);
+                    NVSManager::getInstance().setTreble(treble_value);
                     if (treble_label) {
                         char buf[32];
                         snprintf(buf, sizeof(buf), "TREBLE: %+d dB", treble_value);
@@ -260,11 +271,13 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                 // Выбор текущей станции (уже играет)
                 ESP_LOGI(TAG, "Station selected: %s", stations[current_station]);
                 // Возвращаемся в режим громкости
+                NVSManager::getInstance().setStation(current_station);
                 returnToVolumeMode();
             } else if (current_mode == MODE_BASS) {
                 // Сброс басов в 0
                 bass_value = 0;
                 audio.setTone(bass_value, mid_value, treble_value);
+                NVSManager::getInstance().setBass(bass_value);
                 if (bass_label) {
                     char buf[32];
                     snprintf(buf, sizeof(buf), "BASS: %+d dB", bass_value);
@@ -274,6 +287,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                 // Сброс средних в 0
                 mid_value = 0;
                 audio.setTone(bass_value, mid_value, treble_value);
+                NVSManager::getInstance().setMid(mid_value);
                 if (mid_label) {
                     char buf[32];
                     snprintf(buf, sizeof(buf), "MID: %+d dB", mid_value);
@@ -283,6 +297,7 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
                 // Сброс высоких в 0
                 treble_value = 0;
                 audio.setTone(bass_value, mid_value, treble_value);
+                NVSManager::getInstance().setTreble(treble_value);
                 if (treble_label) {
                     char buf[32];
                     snprintf(buf, sizeof(buf), "TREBLE: %+d dB", treble_value);
@@ -293,10 +308,14 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
             
         case ENCODER_BUTTON_DOUBLE:
             // Двойное нажатие — возврат в режим громкости из любого режима
+            // Сохраняем настройки при возврате из режимов
+            NVSManager::getInstance().commit();
             returnToVolumeMode();
             break;
             
         case ENCODER_BUTTON_LONG:
+            // Сохраняем все настройки сейчас
+            NVSManager::getInstance().commit();
             // Переключение режима (долгое нажатие)
             current_mode = (EncoderMode)((current_mode + 1) % MODE_COUNT);
             updateModeDisplay();
@@ -310,6 +329,19 @@ static void onEncoderEvent(EncoderEvent event, void* userData) {
 
 // Создание UI элементов
 static void create_ui(void) {
+    // Загружаем сохранённые настройки
+    bass_value = NVSManager::getInstance().loadBass(TONE_BASS);
+    mid_value = NVSManager::getInstance().loadMid(TONE_MID);
+    treble_value = NVSManager::getInstance().loadTreble(TONE_TREBLE);
+    current_station = NVSManager::getInstance().loadStation(0);
+    
+    // Применяем тембр
+    AudioManager::getInstance().setTone(bass_value, mid_value, treble_value);
+
+    // ===== Применяем сохранённую громкость =====
+    int savedVolume = NVSManager::getInstance().loadVolume(DEFAULT_VOLUME);
+    AudioManager::getInstance().setVolume(savedVolume);
+
     lv_obj_t* scr = display_get_scr_act();
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), 0);
     
@@ -410,6 +442,7 @@ void uiTaskFunction(void* parameter) {
     while (true) {
         s_encoder->update();
         display_update();
+        NVSManager::getInstance().processDelayedSave(); 
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
