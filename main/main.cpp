@@ -3,26 +3,30 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "config.h"
+#include "esp_log.h"
 #include "tasks/audio_task.h"
 #include "tasks/ui_task.h"
 #include "drivers/audio/audio_manager.h"
 #include "nvs_manager.h"
 #include "messages/audio_messages.h"
+#include "messages/audio_to_ui_messages.h"
 
 static const char* TAG = "MAIN";
 
 // Глобальные очереди
-QueueHandle_t audioQueue = NULL;
+QueueHandle_t audioQueue = NULL;     // для сообщений от UI к AudioTask
+QueueHandle_t audioToUIQueue = NULL; // для сообщений от AudioTask к UI
 
 void setup() {
     Serial.begin(115200);
-    
+      
     ESP_LOGI(TAG, "=== ESP32-S3 Internet Radio ===");
     ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
     
-    // Создаём очереди для сообщений (максимум 10 сообщений)
+    // Создаём очереди для сообщений (максимум AUDIO_QUEUE_SIZE, AUDIO_TO_UI_QUEUE_SIZE сообщений)
     audioQueue = xQueueCreate(AUDIO_QUEUE_SIZE, sizeof(AudioMessage));
-
+    audioToUIQueue = xQueueCreate(AUDIO_TO_UI_QUEUE_SIZE, sizeof(AudioToUIMessage));
+    
     // Инициализация аудио
     AudioManager::getInstance().begin(I2S_BCLK, I2S_LRC, I2S_DOUT);
     // AudioManager::getInstance().setDefaultVolume(DEFAULT_VOLUME);

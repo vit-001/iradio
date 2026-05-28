@@ -18,6 +18,12 @@ extern const char* radio_url;
 #define ENC_B    15
 #define ENC_BTN  17
 
+// Пины для SD карты
+#define SD_CS    47
+#define SD_MOSI  18
+#define SD_MISO  38
+#define SD_SCLK  20
+
 // Пины для дисплея ST7789 
 #define LCD_HOST        SPI2_HOST
 #define LCD_MOSI        6
@@ -49,5 +55,6 @@ extern const char* radio_url;
 
 // Размер очереди для сообщений между задачами
 #define AUDIO_QUEUE_SIZE 10
+#define AUDIO_TO_UI_QUEUE_SIZE 10
 
 #endif // CONFIG_H

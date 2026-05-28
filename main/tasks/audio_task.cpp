@@ -4,6 +4,7 @@
 #include "drivers/audio/audio_manager.h"
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_messages.h"
+#include "messages/audio_to_ui_messages.h"
 #include "esp_log.h"
 #include "Arduino.h"
 
@@ -12,6 +13,7 @@ static TaskHandle_t s_audioTaskHandle = NULL;
 static volatile bool s_audioTaskRunning = true;
 
 extern QueueHandle_t audioQueue;
+extern QueueHandle_t audioToUIQueue;
 
 // Глобальный callback для информации от библиотеки Audio
 void my_audio_info(Audio::msg_t m) {

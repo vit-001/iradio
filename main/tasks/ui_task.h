@@ -1,16 +1,28 @@
+/**
+ * @file ui_task.h
+ * @brief Задача пользовательского интерфейса
+ * 
+ * Отвечает за инициализацию дисплея, экранов и обработку UI.
+ */
+
 #ifndef UI_TASK_H
 #define UI_TASK_H
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+/**
+ * @brief Запуск задачи UI на указанном ядре
+ * @param core номер ядра (0 или 1)
+ * @param priority приоритет задачи
+ * @param stackSize размер стека в байтах
+ */
 void startUiTask(int core, int priority, int stackSize);
-TaskHandle_t getUiTaskHandle();
 
-// Функции для обновления UI из других задач
-void ui_update_station(const char* station);
-void ui_update_song(const char* song);
-void ui_update_volume(int volume);
-void ui_update_status(bool is_playing);
+/**
+ * @brief Получить handle задачи UI
+ * @return handle задачи, или NULL если задача не создана
+ */
+TaskHandle_t getUiTaskHandle();
 
 #endif // UI_TASK_H

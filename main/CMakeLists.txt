@@ -2,13 +2,17 @@ idf_component_register(
     SRCS 
         main.cpp
         config.cpp
-        my_font_16.c
         tasks/audio_task.cpp
         tasks/ui_task.cpp
         drivers/encoder/encoder.cpp
         drivers/audio/audio_manager.cpp
         drivers/display/display_driver.cpp
         drivers/nvs/nvs_manager.cpp
+        ui/screen_manager.cpp
+        ui/screens/screen.cpp
+        ui/screens/volume_screen.cpp
+        ui/screens/eq_screen.cpp
+        ui/screens/station_screen.cpp
     INCLUDE_DIRS 
         "."
         "tasks"
@@ -17,6 +21,8 @@ idf_component_register(
         "drivers/audio"
         "drivers/display"
         "drivers/nvs"
+        "ui"
+        "ui/screens"
     REQUIRES 
         Arduino 
         mbedtls 

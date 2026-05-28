@@ -115,6 +115,9 @@ void NVSManager::setVolume(int volume) {
 void NVSManager::setStation(int station) {
     if (m_station != station) {
         m_station = station;
+        m_pendingSave = true;
+        m_saveTimer = esp_timer_get_time() / 1000 + 10000;
+        ESP_LOGI(TAG, "Station changed to %d, pending save", station);
     }
 }
 

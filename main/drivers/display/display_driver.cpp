@@ -10,8 +10,10 @@
 #include "esp_lcd_panel_ops.h"
 
 static const char* TAG = "DISPLAY_DRV";
+static esp_lcd_panel_io_handle_t io_handle = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL;
 static lv_disp_t* lvgl_disp = NULL;
+static bool s_is_asleep = false;
 
 // Callback для LVGL — когда нужно обновить экран
 static void lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map) {
@@ -53,7 +55,6 @@ bool display_driver_init(void) {
     ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
     
     // 3. Panel IO
-    esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_spi_config_t io_config = {};
     io_config.cs_gpio_num = LCD_CS;
     io_config.dc_gpio_num = LCD_DC;
@@ -138,4 +139,62 @@ void display_backlight(bool on) {
 
 void display_set_brightness(uint8_t percent) {
     gpio_set_level((gpio_num_t)LCD_BL, percent > 0 ? 1 : 0);
+}
+
+void display_sleep(void) {
+    if (!io_handle || !panel_handle) {
+        ESP_LOGW(TAG, "Display not initialized, cannot sleep");
+        return;
+    }
+    
+    if (s_is_asleep) {
+        ESP_LOGD(TAG, "Display already in sleep mode");
+        return;
+    }
+    
+    ESP_LOGI(TAG, "Putting display to sleep...");
+    
+    // ST7789 Sleep In command (0x10)
+    uint8_t sleep_cmd = 0x10;
+    esp_lcd_panel_io_tx_param(io_handle, sleep_cmd, NULL, 0);
+    
+    // Небольшая задержка для стабилизации
+    vTaskDelay(pdMS_TO_TICKS(10));
+    
+    s_is_asleep = true;
+    ESP_LOGI(TAG, "Display is now in sleep mode");
+}
+
+void display_wake(void) {
+    if (!io_handle || !panel_handle) {
+        ESP_LOGW(TAG, "Display not initialized, cannot wake");
+        return;
+    }
+    
+    if (!s_is_asleep) {
+        ESP_LOGD(TAG, "Display already awake");
+        return;
+    }
+    
+    ESP_LOGI(TAG, "Waking display from sleep...");
+    
+    // ST7789 Sleep Out command (0x11)
+    uint8_t wake_cmd = 0x11;
+    esp_lcd_panel_io_tx_param(io_handle, wake_cmd, NULL, 0);
+    
+    // Ожидание пробуждения (согласно даташиту ST7789 требуется 120 мс)
+    vTaskDelay(pdMS_TO_TICKS(120));
+    
+    // Переинициализация LVGL буфера (опционально)
+    // Данные в ОЗУ дисплея могли быть потеряны, нужно перерисовать экран
+    if (lvgl_disp) {
+        lv_refr_now(lvgl_disp);  // Принудительное обновление
+    }
+    
+    s_is_asleep = false;
+    ESP_LOGI(TAG, "Display is now awake");
+}
+
+bool display_is_asleep(void) {
+    return s_is_asleep;
 }
