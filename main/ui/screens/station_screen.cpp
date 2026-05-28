@@ -9,6 +9,7 @@
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_messages.h"
 #include "messages/audio_to_ui_messages.h"
+#include "fonts/fonts.h"
 #include "esp_log.h"
 
 static const char* TAG = "STATION_SCREEN";
@@ -50,33 +51,33 @@ lv_obj_t* StationScreen::create() {
     
     // ==================== Предыдущая станция (подсказка сверху) ====================
     m_previousLabel = lv_label_create(main_cont);
-    lv_obj_set_style_text_font(m_previousLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_previousLabel, font_text_medium, 0);
     lv_obj_set_style_text_color(m_previousLabel, lv_color_hex(0x888888), 0);  // серый
     lv_obj_set_style_pad_bottom(m_previousLabel, 10, 0);
     
     // ==================== Текущая станция (крупно) ====================
     m_stationNameLabel = lv_label_create(main_cont);
-    lv_obj_set_style_text_font(m_stationNameLabel, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(m_stationNameLabel, font_text_medium, 0);
     lv_obj_set_style_text_color(m_stationNameLabel, lv_color_hex(0xFFFF00), 0);  // жёлтый
     lv_obj_set_style_pad_bottom(m_stationNameLabel, 10, 0);
     
     // ==================== Следующая станция (подсказка снизу) ====================
     m_nextLabel = lv_label_create(main_cont);
-    lv_obj_set_style_text_font(m_nextLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_nextLabel, font_text_medium, 0);
     lv_obj_set_style_text_color(m_nextLabel, lv_color_hex(0x888888), 0);  // серый
     lv_obj_set_style_pad_bottom(m_nextLabel, 20, 0);
     
     // ==================== Подсказка ====================
     m_hintLabel = lv_label_create(main_cont);
     lv_label_set_text(m_hintLabel, "PRESS TO SELECT");
-    lv_obj_set_style_text_font(m_hintLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_hintLabel, font_text_small, 0);
     lv_obj_set_style_text_color(m_hintLabel, lv_color_hex(0x00FF00), 0);  // зелёный
     lv_obj_set_style_pad_bottom(m_hintLabel, 10, 0);
     
     // ==================== Индикатор воспроизведения ====================
     m_playingIndicator = lv_label_create(main_cont);
     lv_label_set_text(m_playingIndicator, "▶ NOW PLAYING");
-    lv_obj_set_style_text_font(m_playingIndicator, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_playingIndicator, font_text_small, 0);
     lv_obj_set_style_text_color(m_playingIndicator, lv_color_hex(0x00FF00), 0);
     lv_obj_add_flag(m_playingIndicator, LV_OBJ_FLAG_HIDDEN);  // скрыт по умолчанию
     

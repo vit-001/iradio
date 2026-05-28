@@ -8,6 +8,7 @@
 #include "drivers/audio/audio_manager.h"
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_to_ui_messages.h"
+#include "fonts/fonts.h"
 #include "esp_log.h"
 
 static const char* TAG = "EQ_SCREEN";
@@ -52,19 +53,19 @@ lv_obj_t* EQScreen::create() {
     // ==================== Заголовок ====================
     m_titleLabel = lv_label_create(main_cont);
     lv_label_set_text(m_titleLabel, "EQUALIZER");
-    lv_obj_set_style_text_font(m_titleLabel, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(m_titleLabel, font_text_medium, 0);
     lv_obj_set_style_text_color(m_titleLabel, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_pad_bottom(m_titleLabel, 30, 0);
     
     // ==================== Название текущей полосы ====================
     m_bandLabel = lv_label_create(main_cont);
-    lv_obj_set_style_text_font(m_bandLabel, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(m_bandLabel, font_accent, 0);
     lv_obj_set_style_text_color(m_bandLabel, lv_color_hex(0xFFFF00), 0);  // жёлтый
     lv_obj_set_style_pad_bottom(m_bandLabel, 10, 0);
     
     // ==================== Текущее значение ====================
     m_valueLabel = lv_label_create(main_cont);
-    lv_obj_set_style_text_font(m_valueLabel, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(m_valueLabel, font_accent, 0);
     lv_obj_set_style_pad_bottom(m_valueLabel, 20, 0);
     
     // ==================== Шкала с метками ====================
@@ -84,17 +85,17 @@ lv_obj_t* EQScreen::create() {
     
     m_minLabel = lv_label_create(scale_cont);
     lv_label_set_text(m_minLabel, "-40");
-    lv_obj_set_style_text_font(m_minLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_minLabel, font_accent, 0);
     lv_obj_set_style_text_color(m_minLabel, lv_color_hex(0x888888), 0);
     
     m_zeroLabel = lv_label_create(scale_cont);
     lv_label_set_text(m_zeroLabel, "0");
-    lv_obj_set_style_text_font(m_zeroLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_zeroLabel, font_accent, 0);
     lv_obj_set_style_text_color(m_zeroLabel, lv_color_hex(0xFFFFFF), 0);
     
     m_maxLabel = lv_label_create(scale_cont);
     lv_label_set_text(m_maxLabel, "+6");
-    lv_obj_set_style_text_font(m_maxLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_maxLabel, font_accent, 0);
     lv_obj_set_style_text_color(m_maxLabel, lv_color_hex(0x888888), 0);
     
     // ==================== Прогресс-бар ====================
@@ -106,7 +107,7 @@ lv_obj_t* EQScreen::create() {
     // ==================== Подсказка ====================
     m_hintLabel = lv_label_create(main_cont);
     lv_label_set_text(m_hintLabel, "PRESS TO SWITCH BAND");
-    lv_obj_set_style_text_font(m_hintLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_hintLabel, font_text_small, 0);
     lv_obj_set_style_text_color(m_hintLabel, lv_color_hex(0x00FF00), 0);  // зелёный
     
     // ==================== Загрузка значений ====================

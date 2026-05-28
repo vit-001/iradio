@@ -39,6 +39,8 @@ extern const char* radio_url;
 #define LCD_GAP_X       0
 #define LCD_GAP_Y       0
 
+// Настройки дисплея
+#define DISPLAY_SLEEP_TIMEOUT_MS    0   // таймаут гашения дисплея в мс (0 - не отключать)
 
 // Настройки тембра
 #define TONE_BASS   3

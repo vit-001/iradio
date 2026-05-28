@@ -9,6 +9,7 @@
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_to_ui_messages.h"
 #include "esp_log.h"
+#include "fonts/fonts.h"
 
 static const char* TAG = "VOLUME_SCREEN";
 
@@ -49,14 +50,14 @@ lv_obj_t* VolumeScreen::create() {
     // ==================== Название станции ====================
     m_stationLabel = lv_label_create(main_cont);
     lv_label_set_text(m_stationLabel, "DFM");
-    lv_obj_set_style_text_font(m_stationLabel, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(m_stationLabel, font_text_medium, 0);
     lv_obj_set_style_text_color(m_stationLabel, lv_color_hex(0xFFFF00), 0);  // жёлтый
     lv_obj_set_style_pad_bottom(m_stationLabel, 20, 0);
     
     // ==================== Название трека ====================
     m_songLabel = lv_label_create(main_cont);
     lv_label_set_text(m_songLabel, "Loading...");
-    lv_obj_set_style_text_font(m_songLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_songLabel, font_text_small, 0);
     lv_obj_set_style_text_color(m_songLabel, lv_color_hex(0xFFFFFF), 0);  // белый
     lv_obj_set_style_pad_bottom(m_songLabel, 40, 0);
     
@@ -68,13 +69,13 @@ lv_obj_t* VolumeScreen::create() {
     
     // ==================== Текст громкости ====================
     m_volumeLabel = lv_label_create(main_cont);
-    lv_obj_set_style_text_font(m_volumeLabel, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(m_volumeLabel, font_accent, 0);
     lv_obj_set_style_text_color(m_volumeLabel, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_pad_bottom(m_volumeLabel, 20, 0);
     
     // ==================== Статус воспроизведения ====================
     m_statusLabel = lv_label_create(main_cont);
-    lv_obj_set_style_text_font(m_statusLabel, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(m_statusLabel, font_mono_small, 0);
     
     // ==================== Загрузка начальных значений ====================
     // Загружаем сохранённую громкость из NVS

@@ -27,7 +27,7 @@ static Encoder* s_encoder = nullptr;
 
 static unsigned long s_lastActivity = 0;
 static bool s_displayAwake = true;
-static const unsigned long DISPLAY_SLEEP_TIMEOUT = 30000;  // 30 секунд
+static const unsigned long DISPLAY_SLEEP_TIMEOUT = DISPLAY_SLEEP_TIMEOUT_MS;
 
 // Внешняя очередь для сообщений от AudioTask (объявлена в main.cpp)
 extern QueueHandle_t audioToUIQueue;
@@ -168,7 +168,7 @@ void uiTaskFunction(void* parameter) {
         s_encoder->update();
 
         // Проверка таймера бездействия
-        if (s_displayAwake && (millis() - s_lastActivity) > DISPLAY_SLEEP_TIMEOUT) {
+        if (DISPLAY_SLEEP_TIMEOUT > 0 && s_displayAwake && (millis() - s_lastActivity) > DISPLAY_SLEEP_TIMEOUT) {
             display_sleep();
             s_displayAwake = false;
             ESP_LOGI(TAG, "Display put to sleep due to inactivity");

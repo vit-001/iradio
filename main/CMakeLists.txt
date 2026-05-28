@@ -13,6 +13,12 @@ idf_component_register(
         ui/screens/volume_screen.cpp
         ui/screens/eq_screen.cpp
         ui/screens/station_screen.cpp
+        fonts/fonts.cpp
+        fonts/inter_medium_14.c
+        fonts/inter_medium_18.c
+        fonts/roboto_mono_12.c
+        fonts/roboto_mono_14.c
+        fonts/bebas_neue_24.c
     INCLUDE_DIRS 
         "."
         "tasks"
@@ -23,6 +29,7 @@ idf_component_register(
         "drivers/nvs"
         "ui"
         "ui/screens"
+        "fonts"
     REQUIRES 
         Arduino 
         mbedtls 
@@ -34,6 +41,9 @@ idf_component_register(
         driver 
         lvgl
         nvs_flash
+        sdmmc
+        fatfs
+        spi_flash
 )
 
 target_include_directories(${COMPONENT_TARGET} PRIVATE

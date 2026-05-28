@@ -10,6 +10,7 @@
 #include "nvs_manager.h"
 #include "messages/audio_messages.h"
 #include "messages/audio_to_ui_messages.h"
+#include "fonts/fonts.h"
 
 static const char* TAG = "MAIN";
 
@@ -35,6 +36,9 @@ void setup() {
     // Инициализация NVS для сохранения настроек
     NVSManager::getInstance().init();    
 
+    // Инициализируем шрифты для UI
+    init_fonts();
+ 
     // Запуск задач
     ESP_LOGI(TAG, "Starting tasks...");
     startAudioTask(0, 3, 16384);   // Ядро 0, приоритет 3, стек 16KB

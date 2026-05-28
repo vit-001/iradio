@@ -18,3 +18,4 @@ dependencies:
   espressif/esp-dsp: ^1.6.1
   lvgl/lvgl: ^8.3.11
   espressif/esp_lvgl_adapter: '*'
+  espressif/freetype: ^2.13.3
