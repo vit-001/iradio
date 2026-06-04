@@ -27,8 +27,9 @@ public:
     /**
      * @brief Конструктор
      * @param manager указатель на менеджер экранов (для навигации)
+     * @param parent указатель на контейнер/родительского объекта, в котором будет размещён экран
      */
-    explicit Screen(ScreenManager* manager) : m_manager(manager) {}
+    explicit Screen(ScreenManager* manager, lv_obj_t* parent) : m_manager(manager), m_parent(parent) {}
     
     virtual ~Screen() = default;
     
@@ -97,24 +98,22 @@ public:
     // ==================== Переключение экранов ====================
     
     /**
-     * @brief Вызывается менеджером при показе экрана
-     * 
-     * Можно использовать для:
-     * - Сброса внутреннего состояния
-     * - Обновления данных перед показом
-     * - Анимации появления
+     * @brief Показать экран
      */
-    virtual void onShow() {}
+    void Show() { 
+        if (main_cont != nullptr) {
+            lv_obj_clear_flag(main_cont, LV_OBJ_FLAG_HIDDEN); 
+        }
+    }
     
     /**
-     * @brief Вызывается менеджером при скрытии экрана
-     * 
-     * Можно использовать для:
-     * - Сохранения состояния
-     * - Очистки временных данных
-     * - Анимации исчезновения
+     * @brief Скрыть экран
      */
-    virtual void onHide() {}
+    void Hide() { 
+        if (main_cont != nullptr) {
+            lv_obj_add_flag(main_cont, LV_OBJ_FLAG_HIDDEN); 
+        }
+    }
     
     /**
      * @brief Принудительное обновление содержимого экрана
@@ -129,13 +128,14 @@ public:
      * @brief Получить LVGL объект экрана
      * @return указатель на lv_obj_t
      */
-    lv_obj_t* getLvglScreen() const { return m_screen; }
+    lv_obj_t* getLvglScreen() const { return main_cont; }
  
     
 
 
 protected:
-    lv_obj_t* m_screen = nullptr;      ///< LVGL объект экрана
+    lv_obj_t* m_parent = nullptr;    ///< Родительский контейнер для размещения экрана
+    lv_obj_t* main_cont = nullptr;      ///< LVGL объект главного контейнера
     ScreenManager* m_manager = nullptr; ///< Указатель на менеджер (для навигации)
     
     /**

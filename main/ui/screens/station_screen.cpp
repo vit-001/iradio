@@ -20,8 +20,8 @@ static const char* TAG = "STATION_SCREEN";
 
 // ==================== Конструктор ====================
 
-StationScreen::StationScreen(ScreenManager* manager) 
-    : Screen(manager) {
+StationScreen::StationScreen(ScreenManager* manager, lv_obj_t* parent) 
+    : Screen(manager, parent) {
 }
 
 // ==================== Жизненный цикл ====================
@@ -29,32 +29,38 @@ StationScreen::StationScreen(ScreenManager* manager)
 lv_obj_t* StationScreen::create() {
     ESP_LOGI(TAG, "Creating StationScreen");
     
-    // ==================== Создание LVGL экрана ====================
-    m_screen = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(m_screen, lv_color_hex(0x000000), 0);
-    
-    // ==================== Главный flex-контейнер ====================
-    lv_obj_t* main_cont = lv_obj_create(m_screen);
-    lv_obj_set_size(main_cont, LV_HOR_RES, LV_VER_RES);
+    // Создаем базовый контейнер для контента
+    main_cont = lv_obj_create(m_parent);
+    lv_obj_set_size(main_cont, LV_PCT(100), LV_PCT(100));    
     lv_obj_set_style_bg_color(main_cont, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_border_width(main_cont, 0, 0);
-    lv_obj_clear_flag(main_cont, LV_OBJ_FLAG_SCROLLABLE);
-    
+    lv_obj_set_style_bg_opa(main_cont, LV_OPA_TRANSP, 0); // Прозрачный фон
+
+    // Настраиваем Flex-сетку (в колонку, сверху вниз)
+    lv_obj_set_layout(main_cont, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(main_cont, LV_FLEX_FLOW_COLUMN);
+
+    // Выравнивание элементов по центру по горизонтали, старт — по вертикали
     lv_obj_set_flex_align(main_cont, 
-        LV_FLEX_ALIGN_SPACE_AROUND,
-        LV_FLEX_ALIGN_CENTER,
-        LV_FLEX_ALIGN_CENTER);
-    
+                            LV_FLEX_ALIGN_SPACE_AROUND,   // Выравнивание по вертикали (main axis)
+                            LV_FLEX_ALIGN_CENTER,  // Выравнивание по горизонтали (cross axis)
+                            LV_FLEX_ALIGN_CENTER);  // Выравнивание строк (для multi-line)
+
+
+    // Сбрасываем дефолтные отступы, настраиваем зазор между метками
+    lv_obj_set_style_pad_all(main_cont, 10, 0);     // Внутренний отступ от краев экрана
+    lv_obj_set_style_pad_row(main_cont, 8, 0);      // Расстояние МЕЖДУ метками по вертикали
+    lv_obj_set_style_border_width(main_cont, 0, 0); // Без рамок
+
     // ==================== Индикатор режима ====================
     m_modeLabel = lv_label_create(main_cont);
-    setModeIndicator(m_modeLabel, "STATION", 0xFFFF00);  // жёлтый
+    lv_label_set_text(m_modeLabel, "STATION");
+    lv_obj_set_style_text_color(m_modeLabel, lv_color_hex(0xFFFF00), 0);  // жёлтый
     lv_obj_set_style_pad_bottom(m_modeLabel, 20, 0);
     
     // ==================== Предыдущая станция (подсказка сверху) ====================
     m_previousLabel = lv_label_create(main_cont);
     lv_obj_set_style_text_font(m_previousLabel, font_text_medium, 0);
-    lv_obj_set_style_text_color(m_previousLabel, lv_color_hex(0x888888), 0);  // серый
+    lv_obj_set_style_text_color(m_previousLabel, lv_color_hex(0xAAAAAA), 0);  // серый
     lv_obj_set_style_pad_bottom(m_previousLabel, 10, 0);
     
     // ==================== Текущая станция (крупно) ====================
@@ -66,22 +72,8 @@ lv_obj_t* StationScreen::create() {
     // ==================== Следующая станция (подсказка снизу) ====================
     m_nextLabel = lv_label_create(main_cont);
     lv_obj_set_style_text_font(m_nextLabel, font_text_medium, 0);
-    lv_obj_set_style_text_color(m_nextLabel, lv_color_hex(0x888888), 0);  // серый
+    lv_obj_set_style_text_color(m_nextLabel, lv_color_hex(0xAAAAAA), 0);  // серый
     lv_obj_set_style_pad_bottom(m_nextLabel, 20, 0);
-    
-    // ==================== Подсказка ====================
-    m_hintLabel = lv_label_create(main_cont);
-    lv_label_set_text(m_hintLabel, "PRESS TO SELECT");
-    lv_obj_set_style_text_font(m_hintLabel, font_text_small, 0);
-    lv_obj_set_style_text_color(m_hintLabel, lv_color_hex(0x00FF00), 0);  // зелёный
-    lv_obj_set_style_pad_bottom(m_hintLabel, 10, 0);
-    
-    // ==================== Индикатор воспроизведения ====================
-    m_playingIndicator = lv_label_create(main_cont);
-    lv_label_set_text(m_playingIndicator, "▶ NOW PLAYING");
-    lv_obj_set_style_text_font(m_playingIndicator, font_text_small, 0);
-    lv_obj_set_style_text_color(m_playingIndicator, lv_color_hex(0x00FF00), 0);
-    lv_obj_add_flag(m_playingIndicator, LV_OBJ_FLAG_HIDDEN);  // скрыт по умолчанию
     
     // ==================== Загрузка начальных значений ====================
     // Загружаем сохранённую станцию из NVS
@@ -89,17 +81,8 @@ lv_obj_t* StationScreen::create() {
     switchToStation(saved_station);
     
     ESP_LOGI(TAG, "StationScreen created");
-    return m_screen;
+    return main_cont;
 }
-
-// // Вспомогательная функция для получения индекса текущей станции из информации
-// static int getCurrentStationIndexFromInfo(const AudioToUIMessage& msg) {
-//     // Здесь нужно сравнить msg.data.playback.station_name со списком stations[]
-//     // Пока возвращаем 0
-//     (void)msg;
-//     return 0;
-// }
-
 
 // ==================== Обработка событий от AudioTask ====================
 
@@ -133,7 +116,7 @@ void StationScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void StationScreen::onTurnRight() {
+void StationScreen::onTurnLeft() {
     // Следующая станция
     int newIndex = m_currentStationIndex + 1;
     if (newIndex >= STATIONS_COUNT) {
@@ -142,7 +125,7 @@ void StationScreen::onTurnRight() {
     setCurrentStation(newIndex);
 }
 
-void StationScreen::onTurnLeft() {
+void StationScreen::onTurnRight() {
     // Предыдущая станция
     int newIndex = m_currentStationIndex - 1;
     if (newIndex < 0) {
@@ -179,7 +162,6 @@ void StationScreen::setCurrentStation(int index) {
     NVSManager::getInstance().setStation(m_currentStationIndex);
 
     switchToStation(m_currentStationIndex);
-    // updateStationDisplay();
 }
 
 void StationScreen::updateStationDisplay() {
@@ -224,9 +206,6 @@ void StationScreen::switchToStation(int index) {
     msg.type = CMD_PLAY_URL;
     strncpy(msg.url, url, sizeof(msg.url) - 1);
     msg.url[sizeof(msg.url) - 1] = '\0';
-    msg.value1 = 0;
-    msg.value2 = 0;
-    msg.value3 = 0;
     xQueueSend(audioQueue, &msg, portMAX_DELAY);
     // UI обновится через EVENT_STATION_CHANGED от AudioTask
 

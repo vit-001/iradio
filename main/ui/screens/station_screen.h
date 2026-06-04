@@ -15,7 +15,6 @@
 #define UI_SCREENS_STATION_SCREEN_H
 
 #include "screen.h"
-// #include "stations.h"
 
 /**
  * @class StationScreen
@@ -26,8 +25,9 @@ public:
     /**
      * @brief Конструктор
      * @param manager указатель на менеджер экранов
+     * @param container указатель на контейнер, в котором будет размещён экран
      */
-    explicit StationScreen(ScreenManager* manager);
+    explicit StationScreen(ScreenManager* manager, lv_obj_t* parent);
     
     virtual ~StationScreen() = default;
     
@@ -47,7 +47,6 @@ public:
      * 
      * Реагирует на:
      * - EVENT_STATION_CHANGED: обновление текущей станции
-     * - EVENT_PLAYBACK_INFO: обновление названия станции
      */
     void handleAudioEvent(const AudioToUIMessage& msg) override;
     
@@ -109,8 +108,6 @@ private:
     lv_obj_t* m_stationNameLabel = nullptr;   ///< Название текущей станции (крупно)
     lv_obj_t* m_previousLabel = nullptr;  ///< Предыдущая станция (мелко, сверху)
     lv_obj_t* m_nextLabel = nullptr;      ///< Следующая станция (мелко, снизу)
-    lv_obj_t* m_hintLabel = nullptr;      ///< Подсказка "Press to select"
-    lv_obj_t* m_playingIndicator = nullptr; ///< Индикатор, что станция играет (если активна)
 };
 
 #endif // UI_SCREENS_STATION_SCREEN_H

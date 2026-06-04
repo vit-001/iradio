@@ -10,10 +10,13 @@ idf_component_register(
         drivers/display/display_driver.cpp
         drivers/nvs/nvs_manager.cpp
         ui/screen_manager.cpp
+        ui/root_screen.cpp
         ui/screens/screen.cpp
         ui/screens/volume_screen.cpp
         ui/screens/eq_screen.cpp
         ui/screens/station_screen.cpp
+        ui/status_bars/top_bar.cpp
+        ui/status_bars/bottom_bar.cpp
         fonts/fonts.cpp
         fonts/inter_medium_14.c
         fonts/inter_medium_18.c

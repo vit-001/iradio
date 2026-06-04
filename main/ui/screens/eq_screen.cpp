@@ -5,7 +5,8 @@
 
 #include "eq_screen.h"
 #include "ui/screen_manager.h"
-#include "drivers/audio/audio_manager.h"
+// #include "drivers/audio/audio_manager.h"
+#include "messages/audio_messages.h"
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_to_ui_messages.h"
 #include "fonts/fonts.h"
@@ -19,43 +20,43 @@ const char* EQScreen::BAND_NAMES[] = {"BASS", "MID", "TREBLE"};
 
 // ==================== Конструктор ====================
 
-EQScreen::EQScreen(ScreenManager* manager) 
-    : Screen(manager) {
+EQScreen::EQScreen(ScreenManager* manager, lv_obj_t* parent) 
+    : Screen(manager, parent) {
 }
 
 // ==================== Жизненный цикл ====================
 
 lv_obj_t* EQScreen::create() {
     ESP_LOGI(TAG, "Creating EQScreen");
-    
-    // ==================== Создание LVGL экрана ====================
-    m_screen = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(m_screen, lv_color_hex(0x000000), 0);
-    
-    // ==================== Главный flex-контейнер ====================
-    lv_obj_t* main_cont = lv_obj_create(m_screen);
-    lv_obj_set_size(main_cont, LV_HOR_RES, LV_VER_RES);
+
+    // Создаем базовый контейнер для контента
+    main_cont = lv_obj_create(m_parent);
+    lv_obj_set_size(main_cont, LV_PCT(100), LV_PCT(100));    
     lv_obj_set_style_bg_color(main_cont, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_border_width(main_cont, 0, 0);
-    lv_obj_clear_flag(main_cont, LV_OBJ_FLAG_SCROLLABLE);
-    
+    lv_obj_set_style_bg_opa(main_cont, LV_OPA_TRANSP, 0); // Прозрачный фон 
+
+
+    // Настраиваем Flex-сетку (в колонку, сверху вниз)
+    lv_obj_set_layout(main_cont, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(main_cont, LV_FLEX_FLOW_COLUMN);
+ 
+    // Выравнивание элементов по центру по горизонтали, старт — по вертикали
     lv_obj_set_flex_align(main_cont, 
-        LV_FLEX_ALIGN_CENTER,
-        LV_FLEX_ALIGN_CENTER,
-        LV_FLEX_ALIGN_CENTER);
+                            LV_FLEX_ALIGN_SPACE_AROUND,   // Выравнивание по вертикали (main axis)
+                            LV_FLEX_ALIGN_CENTER,  // Выравнивание по горизонтали (cross axis)
+                            LV_FLEX_ALIGN_CENTER);  // Выравнивание строк (для multi-line)
     
+
+    // 3. Сбрасываем дефолтные отступы, настраиваем зазор между метками
+    lv_obj_set_style_pad_all(main_cont, 10, 0);     // Внутренний отступ от краев экрана
+    lv_obj_set_style_pad_row(main_cont, 8, 0);      // Расстояние МЕЖДУ метками по вертикали
+    lv_obj_set_style_border_width(main_cont, 0, 0); // Без рамок
+      
     // ==================== Индикатор режима ====================
     m_modeLabel = lv_label_create(main_cont);
-    setModeIndicator(m_modeLabel, "EQ", 0x00FFFF);  // голубой
+    lv_label_set_text(m_modeLabel, "EQ");
+    lv_obj_set_style_text_color(m_modeLabel, lv_color_hex(0x00FFFF), 0);  // голубой
     lv_obj_set_style_pad_bottom(m_modeLabel, 20, 0);
-    
-    // ==================== Заголовок ====================
-    m_titleLabel = lv_label_create(main_cont);
-    lv_label_set_text(m_titleLabel, "EQUALIZER");
-    lv_obj_set_style_text_font(m_titleLabel, font_text_medium, 0);
-    lv_obj_set_style_text_color(m_titleLabel, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_style_pad_bottom(m_titleLabel, 30, 0);
     
     // ==================== Название текущей полосы ====================
     m_bandLabel = lv_label_create(main_cont);
@@ -104,12 +105,6 @@ lv_obj_t* EQScreen::create() {
     lv_bar_set_range(m_bar, 0, 100);
     lv_obj_set_style_pad_bottom(m_bar, 20, 0);
     
-    // ==================== Подсказка ====================
-    m_hintLabel = lv_label_create(main_cont);
-    lv_label_set_text(m_hintLabel, "PRESS TO SWITCH BAND");
-    lv_obj_set_style_text_font(m_hintLabel, font_text_small, 0);
-    lv_obj_set_style_text_color(m_hintLabel, lv_color_hex(0x00FF00), 0);  // зелёный
-    
     // ==================== Загрузка значений ====================
     // Загружаем сохранённые значения из NVS
     m_bass = NVSManager::getInstance().loadBass(0);
@@ -117,15 +112,24 @@ lv_obj_t* EQScreen::create() {
     m_treble = NVSManager::getInstance().loadTreble(0);
     
     // Отправляем в AudioManager для применения
-    AudioManager::getInstance().setTone(m_bass, m_mid, m_treble);
+    // AudioManager::getInstance().setTone(m_bass, m_mid, m_treble);
     
+    // Отправляем команду в AudioTask (через очередь)
+    AudioMessage msg;
+    msg.type = CMD_SET_TONE;
+    msg.value1 = m_bass;
+    msg.value2 = m_mid;
+    msg.value3 = m_treble;
+    xQueueSend(audioQueue, &msg, portMAX_DELAY);
+    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_SET_TONE");
+
     // Обновляем отображение
     updateDisplay();
     
     ESP_LOGI(TAG, "EQScreen created with values: B=%d, M=%d, T=%d", 
              m_bass, m_mid, m_treble);
     
-    return m_screen;
+    return main_cont;
 }
 
 // ==================== Обработка событий от AudioTask ====================
@@ -226,12 +230,20 @@ void EQScreen::updateDisplay() {
 
 void EQScreen::refresh() {
     ESP_LOGD(TAG, "Refreshing EQScreen");
-    updateDisplay();  // переиспользуем существующий метод
+    updateDisplay();  
 }
 
 void EQScreen::sendEQToAudio() {
-    AudioManager::getInstance().setTone(m_bass, m_mid, m_treble);
-    ESP_LOGD(TAG, "Sent EQ to audio: B=%d, M=%d, T=%d", m_bass, m_mid, m_treble);
+    // AudioManager::getInstance().setTone(m_bass, m_mid, m_treble);
+    // Отправляем команду в AudioTask (через очередь)
+    AudioMessage msg;
+    msg.type = CMD_SET_TONE;
+    msg.value1 = m_bass;
+    msg.value2 = m_mid;
+    msg.value3 = m_treble;
+    xQueueSend(audioQueue, &msg, portMAX_DELAY);
+
+    ESP_LOGI(TAG, "Sent EQ to audio: B=%d, M=%d, T=%d", m_bass, m_mid, m_treble);
 }
 
 void EQScreen::saveToNVS() {

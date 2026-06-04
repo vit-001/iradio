@@ -40,20 +40,15 @@ void ScreenManager::switchTo(int index) {
     
     // Скрываем текущий экран (если есть)
     if (m_currentScreen) {
-        ESP_LOGD(TAG, "Hiding current screen (index %d)", m_currentIndex);
-        m_currentScreen->onHide();
-        lv_obj_add_flag(m_currentScreen->getLvglScreen(), LV_OBJ_FLAG_HIDDEN);
+        m_currentScreen->Hide();
     }
     
     // Переключаемся на новый экран
     m_currentIndex = index;
     m_currentScreen = m_screens[m_currentIndex];
     
-    // Показываем новый экран
-    ESP_LOGD(TAG, "Showing new screen (index %d)", m_currentIndex);
-    lv_obj_clear_flag(m_currentScreen->getLvglScreen(), LV_OBJ_FLAG_HIDDEN);
-    m_currentScreen->onShow();
-    lv_scr_load(m_currentScreen->getLvglScreen());
+    // Делаем контейнер видимым внутри центральной области
+    m_currentScreen->Show();
     
     ESP_LOGI(TAG, "Switched to screen index %d", m_currentIndex);
 }

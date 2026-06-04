@@ -15,6 +15,9 @@
 #include "drivers/display/display_driver.h"
 #include "drivers/nvs/nvs_manager.h"
 #include "ui/screen_manager.h"
+#include "ui/root_screen.h"
+#include "ui/status_bars/top_bar.h"
+#include "ui/status_bars/bottom_bar.h"
 #include "ui/screens/volume_screen.h"
 #include "ui/screens/eq_screen.h"
 #include "ui/screens/station_screen.h"
@@ -33,7 +36,10 @@ static const unsigned long DISPLAY_SLEEP_TIMEOUT = DISPLAY_SLEEP_TIMEOUT_MS;
 // Внешняя очередь для сообщений от AudioTask (объявлена в main.cpp)
 extern QueueHandle_t audioToUIQueue;
 
-// Указатели на экраны (хранятся здесь, так как менеджер не владеет памятью)
+// Указатели на объекты LVGL (хранятся здесь, так как менеджер не владеет памятью)
+static RootScreen* s_rootScreen = nullptr;
+static TopBar* s_topBar = nullptr;
+static BottomBar* s_bottomBar = nullptr;
 static VolumeScreen* s_volumeScreen = nullptr;
 static EQScreen* s_eqScreen = nullptr;
 static StationScreen* s_stationScreen = nullptr;
@@ -43,20 +49,36 @@ static StationScreen* s_stationScreen = nullptr;
  * @param mgr ссылка на менеджер экранов
  */
 static void initScreens(ScreenManager& mgr) {
+    // Создаём контейнеры и общие элементы интерфейса
+    s_rootScreen = new RootScreen();
+
+    s_topBar = new TopBar(s_rootScreen->getTopBarContainer());
+    s_bottomBar = new BottomBar(s_rootScreen->getBottomBarContainer());
+    s_rootScreen->Show();
+
     // Создаём экраны (передаём указатель на менеджер для навигации)
-    s_volumeScreen = new VolumeScreen(&mgr);
-    s_stationScreen = new StationScreen(&mgr);
-    s_eqScreen = new EQScreen(&mgr);
+    s_volumeScreen = new VolumeScreen(&mgr, s_rootScreen->getContentContainer());
+    s_stationScreen = new StationScreen(&mgr, s_rootScreen->getContentContainer());
+    s_eqScreen = new EQScreen(&mgr, s_rootScreen->getContentContainer());
     
     // Добавляем экраны в менеджер (порядок определяет порядок переключения)
     mgr.addScreen(s_volumeScreen);
     mgr.addScreen(s_stationScreen);
     mgr.addScreen(s_eqScreen);
+
+    // Устанавливаем указатели на панели в менеджере, чтобы экраны могли их обновлять
+    mgr.setTopBar(s_topBar);
+    mgr.setBottomBar(s_bottomBar);
     
-    // Создаём LVGL объекты для каждого экрана
+    // Создаём LVGL объекты для каждого экрана, сразу их скрывая
     s_volumeScreen->create();
+    s_volumeScreen->Hide();
+
     s_stationScreen->create();
+    s_stationScreen->Hide();
+
     s_eqScreen->create();
+    s_eqScreen->Hide();
     
     ESP_LOGI(TAG, "All screens initialized");
 }
@@ -149,12 +171,11 @@ void uiTaskFunction(void* parameter) {
                              msg.data.playback.volume,
                              msg.data.playback.is_playing);
                     break;
+                    
                 case EVENT_VOLUME_CHANGED:
                     ESP_LOGD(TAG, "Received volume changed: %d", msg.data.volume);
                     break;
-                 case EVENT_VOLUME_CHANGED:
-                    ESP_LOGD(TAG, "Received volume changed: %d", msg.data.volume);
-                    break;                       
+                      
                 case EVENT_WIFI_STATUS:
                     ESP_LOGD(TAG, "Received WiFi status: rssi=%d, ssid='%s'",
                              msg.data.wifi.rssi, msg.data.wifi.ssid);

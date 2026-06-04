@@ -29,8 +29,9 @@ public:
     /**
      * @brief Конструктор
      * @param manager указатель на менеджер экранов
+     * @param container указатель на контейнер, в котором будет размещён экран
      */
-    explicit VolumeScreen(ScreenManager* manager);
+    explicit VolumeScreen(ScreenManager* manager, lv_obj_t* parent);
     
     virtual ~VolumeScreen() = default;
     
@@ -75,7 +76,7 @@ public:
     // onLongPress и onDoublePress оставляем по умолчанию (переключение экрана)
 
     virtual void refresh() override;
-    
+
 private:
     // ==================== Вспомогательные методы ====================
     
@@ -86,17 +87,10 @@ private:
     void updateVolumeDisplay(int volume);
     
     /**
-     * @brief Обновить отображение статуса воспроизведения
-     * @param is_playing true если играет, false если на паузе
-     */
-    void updateStatusDisplay(bool is_playing);
-    
-    /**
-     * @brief Обновить отображение названия станции и трека
-     * @param station название станции
+     * @brief Обновить отображение названия трека
      * @param song название трека
      */
-    void updateSongDisplay(const char* station, const char* song);
+    void updateSongDisplay(const char* song);
     
     // ==================== LVGL виджеты ====================
     

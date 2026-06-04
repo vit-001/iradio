@@ -15,6 +15,8 @@
 
 #include "messages/audio_to_ui_messages.h"
 #include "screens/screen.h"
+#include "ui/status_bars/top_bar.h"
+#include "ui/status_bars/bottom_bar.h"
 #include <vector>
 
 /**
@@ -53,6 +55,19 @@ public:
      * Вызывается по долгому или двойному нажатию по умолчанию.
      */
     void next();
+
+    /**
+     * @brief установить указатель на верхнюю панель
+     * @param topBar указатель на верхнюю панель
+     */
+    void setTopBar(TopBar* topBar) { m_topBar = topBar; }
+
+    
+    /**
+     * @brief установить указатель на нижнюю панель
+     * @param bottomBar указатель на нижнюю панель
+     */
+    void setBottomBar(BottomBar* bottomBar) { m_bottomBar = bottomBar; }    
     
     /**
      * @brief Переключиться на предыдущий экран (по кругу)
@@ -84,7 +99,19 @@ public:
      * @brief Получить количество экранов
      */
     int getScreenCount() const { return m_screens.size(); }
-    
+
+    /**
+     * @brief Получить указатель на верхнюю панель
+     * @return указатель на верхнюю панель, или nullptr если нет экранов
+     */
+    TopBar* getTopBar() const { return m_topBar; }
+
+        /**
+     * @brief Получить указатель на нижнюю панель
+     * @return указатель на нижнюю панель, или nullptr если нет экранов
+     */
+    BottomBar* getBottomBar() const { return m_bottomBar; }
+
     // ==================== События от AudioTask ====================
     
     /**
@@ -148,6 +175,10 @@ private:
     std::vector<Screen*> m_screens;      ///< Список всех экранов
     int m_currentIndex = -1;             ///< Индекс текущего экрана
     Screen* m_currentScreen = nullptr;   ///< Указатель на текущий экран (кэш)
+
+    TopBar* m_topBar = nullptr;          ///< Указатель на верхнюю панель
+    BottomBar* m_bottomBar = nullptr;    ///< Указатель на нижнюю панель
+
 };
 
 #endif // UI_SCREEN_MANAGER_H

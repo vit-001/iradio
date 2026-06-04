@@ -30,8 +30,9 @@ public:
     /**
      * @brief Конструктор
      * @param manager указатель на менеджер экранов
+     * @param parent указатель на контейнер, в котором будет размещён экран
      */
-    explicit EQScreen(ScreenManager* manager);
+    explicit EQScreen(ScreenManager* manager, lv_obj_t* parent);
     
     virtual ~EQScreen() = default;
     
@@ -146,11 +147,9 @@ private:
     // ==================== LVGL виджеты ====================
     
     lv_obj_t* m_modeLabel = nullptr;      ///< Индикатор "EQ" (голубой)
-    lv_obj_t* m_titleLabel = nullptr;     ///< Заголовок "EQUALIZER"
     lv_obj_t* m_bandLabel = nullptr;      ///< Название текущей полосы (BASS/MID/TREBLE)
     lv_obj_t* m_valueLabel = nullptr;     ///< Текущее значение (например "+3 dB")
     lv_obj_t* m_bar = nullptr;            ///< Прогресс-бар для визуализации
-    lv_obj_t* m_hintLabel = nullptr;      ///< Подсказка "Press to switch band"
     lv_obj_t* m_minLabel = nullptr;       ///< Метка минимального значения "-40"
     lv_obj_t* m_maxLabel = nullptr;       ///< Метка максимального значения "+6"
     lv_obj_t* m_zeroLabel = nullptr;      ///< Метка нуля "0"
