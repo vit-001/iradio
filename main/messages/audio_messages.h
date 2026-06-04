@@ -7,6 +7,8 @@
 // Типы команд
 enum AudioCommandType {
     CMD_SET_VOLUME = 0,
+    CMD_VOLUME_UP,
+    CMD_VOLUME_DOWN,
     CMD_SET_TONE,
     CMD_PLAY_URL,
     CMD_PLAY_PAUSE,

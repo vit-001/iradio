@@ -22,6 +22,7 @@
 #include "esp_log.h"
 
 static const char* TAG = "UI_TASK";
+
 static TaskHandle_t s_uiTaskHandle = NULL;
 static Encoder* s_encoder = nullptr;
 
@@ -151,6 +152,9 @@ void uiTaskFunction(void* parameter) {
                 case EVENT_VOLUME_CHANGED:
                     ESP_LOGD(TAG, "Received volume changed: %d", msg.data.volume);
                     break;
+                 case EVENT_VOLUME_CHANGED:
+                    ESP_LOGD(TAG, "Received volume changed: %d", msg.data.volume);
+                    break;                       
                 case EVENT_WIFI_STATUS:
                     ESP_LOGD(TAG, "Received WiFi status: rssi=%d, ssid='%s'",
                              msg.data.wifi.rssi, msg.data.wifi.ssid);
@@ -176,6 +180,9 @@ void uiTaskFunction(void* parameter) {
         
         // Обновление LVGL (обработка таймеров, анимаций и т.д.)
         display_update();
+
+        // Отработка задержки записи в NVS
+        NVSManager::getInstance().processDelayedSave();
         
         // Небольшая задержка для стабильности
         vTaskDelay(pdMS_TO_TICKS(5));

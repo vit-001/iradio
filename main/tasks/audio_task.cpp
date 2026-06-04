@@ -1,6 +1,6 @@
 #include "audio_task.h"
 #include "config.h"
-#include "stations.h"
+#include "station/stations.h"
 #include "drivers/audio/audio_manager.h"
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_messages.h"
@@ -17,10 +17,20 @@ extern QueueHandle_t audioToUIQueue;
 
 // Глобальный callback для информации от библиотеки Audio
 void my_audio_info(Audio::msg_t m) {
+    AudioManager& audio = AudioManager::getInstance();
     switch (m.e) {
-        case Audio::evt_info:
+        case Audio::evt_info:{
             ESP_LOGI(TAG, "Stream info: %s", m.msg);
+
+            if (strstr(m.msg, "slow stream")) {
+                audio.setState(PlaybackState::Buffering);
+            }
+            else if (strstr(m.msg, "Stream lost")) {
+                audio.setState(PlaybackState::Reconnecting);
+            }
+
             break;
+        }
         case Audio::evt_id3data:
             ESP_LOGI(TAG, "ID3 metadata: %s", m.msg);
             // Обновляем дисплей с информацией о треке
@@ -32,9 +42,9 @@ void my_audio_info(Audio::msg_t m) {
             break;
         case Audio::evt_streamtitle:
             ESP_LOGI(TAG, "Stream title: %s", m.msg);
-            // tft.fillRect(10, 35, tft.width() - 20, 20, TFT_BLACK);
-            // tft.setCursor(10, 45);
-            // tft.print(m.msg);
+
+            audio.setState(PlaybackState::Playing);
+
             break;
         case Audio::evt_bitrate:
             ESP_LOGI(TAG, "Bitrate: %s", m.msg);
@@ -51,13 +61,41 @@ void my_audio_info(Audio::msg_t m) {
 // Обработка команд из очереди
 void processAudioCommands(AudioManager& audio) {
     AudioMessage msg;
+    AudioToUIMessage audMsg;
+    int currentVolume = audio.getVolume();
     
     // Проверяем очередь (не блокируем)
     if (xQueueReceive(audioQueue, &msg, 0) == pdTRUE) {
         switch (msg.type) {
             case CMD_SET_VOLUME:
-                audio.setVolume(msg.value1);
-                ESP_LOGI(TAG, "Volume set to %d", msg.value1);
+                currentVolume = msg.value1;
+                if (currentVolume <= MIN_VOLUME) currentVolume = MIN_VOLUME;
+                if (currentVolume >= MAX_VOLUME) currentVolume = MAX_VOLUME;
+                audio.setVolume(currentVolume);                    
+                audMsg.type = EVENT_VOLUME_CHANGED;
+                audMsg.data.volume = audio.getVolume();
+                xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
+                ESP_LOGI(TAG, "Volume set to %d", audio.getVolume());
+                break;
+
+            case CMD_VOLUME_UP:
+                if (currentVolume < MAX_VOLUME) {
+                    audio.setVolume(currentVolume + 1);                    
+                    audMsg.type = EVENT_VOLUME_CHANGED;
+                    audMsg.data.volume = audio.getVolume();
+                    xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
+                    ESP_LOGI(TAG, "Volume increased to %d", audio.getVolume());
+                }
+                break;
+                
+            case CMD_VOLUME_DOWN:
+                if (currentVolume > MIN_VOLUME) {
+                    audio.setVolume(currentVolume - 1);
+                    audMsg.type = EVENT_VOLUME_CHANGED;
+                    audMsg.data.volume = audio.getVolume();
+                    xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
+                    ESP_LOGI(TAG, "Volume decreased to %d", audio.getVolume());
+                }
                 break;
                 
             case CMD_SET_TONE:
@@ -68,6 +106,10 @@ void processAudioCommands(AudioManager& audio) {
             case CMD_PLAY_URL:
                 ESP_LOGI(TAG, "Playing URL: %s", msg.url);
                 audio.connectToStream(msg.url);
+                audMsg.type = EVENT_STATION_CHANGED;
+                strncpy(audMsg.data.url, msg.url, sizeof(audMsg.data.url) - 1);
+                audMsg.data.url[sizeof(audMsg.data.url) - 1] = '\0';
+                xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
                 break;
                 
             case CMD_PLAY_PAUSE:
@@ -123,11 +165,10 @@ void audioTaskFunction(void* parameter) {
         // Аудио-цикл
         audio.loop();
         
-        // if (millis() - lastLoopLog > 30000) {
-        //     lastLoopLog = millis();
-        //     ESP_LOGD(TAG, "Audio loop running, playing: %s", 
-        //         audio.isPlaying() ? "yes" : "no");
-        // }
+        if (millis() - lastLoopLog > 500) {
+            lastLoopLog = millis();
+            // audio.inBufferStatus(); // для отладки: вывод статуса буфера в лог
+        }
         
         vTaskDelay(pdMS_TO_TICKS(5));
     }

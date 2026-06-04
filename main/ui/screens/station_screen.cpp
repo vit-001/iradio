@@ -5,7 +5,8 @@
 
 #include "station_screen.h"
 #include "ui/screen_manager.h"
-#include "drivers/audio/audio_manager.h"
+// #include "drivers/audio/audio_manager.h"
+#include "station/stations.h"
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_messages.h"
 #include "messages/audio_to_ui_messages.h"
@@ -14,7 +15,8 @@
 
 static const char* TAG = "STATION_SCREEN";
 
-extern QueueHandle_t audioQueue;
+// extern QueueHandle_t audioQueue;
+
 
 // ==================== Конструктор ====================
 
@@ -40,7 +42,7 @@ lv_obj_t* StationScreen::create() {
     
     lv_obj_set_flex_flow(main_cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(main_cont, 
-        LV_FLEX_ALIGN_CENTER,
+        LV_FLEX_ALIGN_SPACE_AROUND,
         LV_FLEX_ALIGN_CENTER,
         LV_FLEX_ALIGN_CENTER);
     
@@ -83,38 +85,46 @@ lv_obj_t* StationScreen::create() {
     
     // ==================== Загрузка начальных значений ====================
     // Загружаем сохранённую станцию из NVS
-    m_currentStationIndex = NVSManager::getInstance().loadStation(0);
-    updateStationDisplay();
+    int saved_station = NVSManager::getInstance().loadStation(0);
+    switchToStation(saved_station);
     
     ESP_LOGI(TAG, "StationScreen created");
     return m_screen;
 }
 
-// Вспомогательная функция для получения индекса текущей станции из информации
-static int getCurrentStationIndexFromInfo(const AudioToUIMessage& msg) {
-    // Здесь нужно сравнить msg.data.playback.station_name со списком stations[]
-    // Пока возвращаем 0
-    (void)msg;
-    return 0;
-}
+// // Вспомогательная функция для получения индекса текущей станции из информации
+// static int getCurrentStationIndexFromInfo(const AudioToUIMessage& msg) {
+//     // Здесь нужно сравнить msg.data.playback.station_name со списком stations[]
+//     // Пока возвращаем 0
+//     (void)msg;
+//     return 0;
+// }
 
 
 // ==================== Обработка событий от AudioTask ====================
 
 void StationScreen::handleAudioEvent(const AudioToUIMessage& msg) {
+    
     switch (msg.type) {
         case EVENT_PLAYBACK_INFO:
-            // Если текущая станция совпадает с играющей, показываем индикатор
-            if (m_currentStationIndex == getCurrentStationIndexFromInfo(msg)) {
-                lv_obj_clear_flag(m_playingIndicator, LV_OBJ_FLAG_HIDDEN);
-            } else {
-                lv_obj_add_flag(m_playingIndicator, LV_OBJ_FLAG_HIDDEN);
-            }
-            // Обновляем название текущей станции из информации
-            if (strlen(msg.data.playback.station_name) > 0) {
-                // Можно обновить отображение, но лучше сохранить согласованность
-            }
+            // // Если текущая станция совпадает с играющей, показываем индикатор
+            // if (m_currentStationIndex == getCurrentStationIndexFromInfo(msg)) {
+            //     lv_obj_clear_flag(m_playingIndicator, LV_OBJ_FLAG_HIDDEN);
+            // } else {
+            //     lv_obj_add_flag(m_playingIndicator, LV_OBJ_FLAG_HIDDEN);
+            // }
+            // // Обновляем название текущей станции из информации
+            // if (strlen(msg.data.playback.station_name) > 0) {
+            //     // Можно обновить отображение, но лучше сохранить согласованность
+            // }
             break;
+
+        case EVENT_STATION_CHANGED:{
+            int index=StationsManager::getInstance().findIndexByUrl(msg.data.url);
+            m_currentStationIndex = index;
+            updateStationDisplay();
+            break;
+        }
             
         default:
             break;
@@ -169,20 +179,22 @@ void StationScreen::setCurrentStation(int index) {
     NVSManager::getInstance().setStation(m_currentStationIndex);
 
     switchToStation(m_currentStationIndex);
-    updateStationDisplay();
+    // updateStationDisplay();
 }
 
 void StationScreen::updateStationDisplay() {
     if (!m_stationNameLabel) return;
     
-    // Получаем названия станций из stations.h
-    const char* current = stations[m_currentStationIndex];
+    // Получаем названия станций из stations
+    StationsManager& stations=StationsManager::getInstance();
+
+    const char* current = stations.getName(m_currentStationIndex);
     const char* prev = (m_currentStationIndex > 0) 
-        ? stations[m_currentStationIndex - 1] 
-        : stations[STATIONS_COUNT - 1];
-    const char* next = (m_currentStationIndex < STATIONS_COUNT - 1) 
-        ? stations[m_currentStationIndex + 1] 
-        : stations[0];
+        ? stations.getName(m_currentStationIndex - 1) 
+        : stations.getName(stations.getCount() - 1);
+    const char* next = (m_currentStationIndex < stations.getCount() - 1) 
+        ? stations.getName(m_currentStationIndex + 1) 
+        : stations.getName(0);
     
     // Обновляем метки
     lv_label_set_text(m_stationNameLabel, current);
@@ -199,13 +211,13 @@ void StationScreen::updateStationDisplay() {
 }
 
 void StationScreen::switchToStation(int index) {
-    if (index < 0 || index >= STATIONS_COUNT) {
-        ESP_LOGW(TAG, "Invalid station index: %d", index);
-        return;
-    }
+    StationsManager::getInstance().getCount(); 
     
-    const char* url = station_urls[index];
-    ESP_LOGI(TAG, "Switching to station %d: %s", index, stations[index]);
+    if (index < 0) index=0;
+    if (index >= StationsManager::getInstance().getCount()) index=StationsManager::getInstance().getCount()-1;
+
+    const char* url = StationsManager::getInstance().getUrl(index);
+    ESP_LOGI(TAG, "Switching to station %d: %s", index, url);
     
     // Отправляем команду в AudioTask (через очередь)
     AudioMessage msg;
@@ -216,6 +228,8 @@ void StationScreen::switchToStation(int index) {
     msg.value2 = 0;
     msg.value3 = 0;
     xQueueSend(audioQueue, &msg, portMAX_DELAY);
+    // UI обновится через EVENT_STATION_CHANGED от AudioTask
+
     ESP_LOGI(TAG, "Command sent to AudioTask: CMD_PLAY_URL");
 
 }

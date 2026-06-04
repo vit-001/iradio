@@ -4,6 +4,7 @@ idf_component_register(
         config.cpp
         tasks/audio_task.cpp
         tasks/ui_task.cpp
+        station/stations.cpp
         drivers/encoder/encoder.cpp
         drivers/audio/audio_manager.cpp
         drivers/display/display_driver.cpp

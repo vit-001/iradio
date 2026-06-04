@@ -1,4 +1,5 @@
 #include "nvs_manager.h"
+#include "config.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 
@@ -102,8 +103,8 @@ int NVSManager::loadTreble(int defaultValue) {
 }
 
 void NVSManager::setVolume(int volume) {
-    if (volume < 0) volume = 0;
-    if (volume > 21) volume = 21;
+    if (volume < MIN_VOLUME) volume = MIN_VOLUME;
+    if (volume > MAX_VOLUME) volume = MAX_VOLUME;
     if (m_volume != volume) {
         m_volume = volume;
         m_pendingSave = true;

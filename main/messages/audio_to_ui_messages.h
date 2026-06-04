@@ -106,6 +106,7 @@ struct AudioToUIMessage {
     
     union {
         PlaybackInfo playback;      ///< EVENT_PLAYBACK_INFO
+        char url[256];              ///< EVENT_STATION_CHANGED
         WiFiStatus wifi;            ///< EVENT_WIFI_STATUS
         EQValues eq;                ///< EVENT_EQ_VALUES
         SpectrumData spectrum;      ///< EVENT_SPECTRUM_DATA

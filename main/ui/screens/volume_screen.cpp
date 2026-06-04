@@ -4,8 +4,11 @@
  */
 
 #include "volume_screen.h"
+#include "config.h"
 #include "ui/screen_manager.h"
-#include "drivers/audio/audio_manager.h"
+//#include "drivers/audio/audio_manager.h"
+#include "station/stations.h"
+#include "messages/audio_messages.h"
 #include "drivers/nvs/nvs_manager.h"
 #include "messages/audio_to_ui_messages.h"
 #include "esp_log.h"
@@ -38,7 +41,7 @@ lv_obj_t* VolumeScreen::create() {
     
     lv_obj_set_flex_flow(main_cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(main_cont, 
-        LV_FLEX_ALIGN_CENTER,  // главная ось (вертикаль)
+        LV_FLEX_ALIGN_SPACE_AROUND,  // главная ось (вертикаль)
         LV_FLEX_ALIGN_CENTER,  // поперечная ось (горизонталь)
         LV_FLEX_ALIGN_CENTER); // распределение
     
@@ -64,7 +67,7 @@ lv_obj_t* VolumeScreen::create() {
     // ==================== Прогресс-бар громкости ====================
     m_volumeBar = lv_bar_create(main_cont);
     lv_obj_set_size(m_volumeBar, 200, 15);
-    lv_bar_set_range(m_volumeBar, 0, 21);  // диапазон громкости 0-21
+    lv_bar_set_range(m_volumeBar, MIN_VOLUME, MAX_VOLUME);  // диапазон громкости
     lv_obj_set_style_pad_bottom(m_volumeBar, 10, 0);
     
     // ==================== Текст громкости ====================
@@ -80,8 +83,14 @@ lv_obj_t* VolumeScreen::create() {
     // ==================== Загрузка начальных значений ====================
     // Загружаем сохранённую громкость из NVS
     int savedVolume = NVSManager::getInstance().loadVolume(10);
-    updateVolumeDisplay(savedVolume);
-    updateStatusDisplay(AudioManager::getInstance().isPlaying());
+    // Отправляем команду в AudioTask (через очередь)
+    AudioMessage msg;
+    msg.type = CMD_SET_VOLUME;
+    msg.value1 = savedVolume;
+    xQueueSend(audioQueue, &msg, portMAX_DELAY);
+    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_SET_VOLUME");
+    // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
+    // updateVolumeDisplay(AudioManager::getInstance().getVolume());
     
     ESP_LOGI(TAG, "VolumeScreen created");
     return m_screen;
@@ -91,22 +100,27 @@ lv_obj_t* VolumeScreen::create() {
 
 void VolumeScreen::handleAudioEvent(const AudioToUIMessage& msg) {
     switch (msg.type) {
-        case EVENT_PLAYBACK_INFO:
-            // Обновляем информацию о станции и треке
-            updateSongDisplay(
-                msg.data.playback.station_name,
-                msg.data.playback.song_title
-            );
-            // Обновляем статус воспроизведения
-            updateStatusDisplay(msg.data.playback.is_playing);
-            // Громкость тоже может быть в этом сообщении
-            updateVolumeDisplay(msg.data.playback.volume);
+        case EVENT_PLAYBACK_INFO: // Обновляем информацию о станции и треке
+            // updateSongDisplay(
+            //     msg.data.playback.station_name,
+            //     msg.data.playback.song_title
+            // );
+            // // Обновляем статус воспроизведения
+            // updateStatusDisplay(msg.data.playback.is_playing);
+            // // Громкость тоже может быть в этом сообщении
+            // // updateVolumeDisplay(msg.data.playback.volume);
             break;
             
-        case EVENT_VOLUME_CHANGED:
-            // Отдельное событие изменения громкости
+        case EVENT_VOLUME_CHANGED: // Событие изменения громкости
+            NVSManager::getInstance().setVolume(msg.data.volume);
             updateVolumeDisplay(msg.data.volume);
             break;
+
+        case EVENT_STATION_CHANGED:{
+            int index=StationsManager::getInstance().findIndexByUrl(msg.data.url);
+            lv_label_set_text(m_stationLabel, StationsManager::getInstance().getName(index));
+            break;
+        }
             
         case EVENT_WIFI_STATUS:
             // Опционально: отображать статус WiFi на экране
@@ -122,35 +136,30 @@ void VolumeScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void VolumeScreen::onTurnRight() {
-    // Увеличиваем громкость
-    int currentVolume = AudioManager::getInstance().getVolume();
-    int newVolume = currentVolume + 1;
-    if (newVolume > 21) newVolume = 21;
-    
-    if (newVolume != currentVolume) {
-        AudioManager::getInstance().setVolume(newVolume);
-        NVSManager::getInstance().setVolume(newVolume);
-        // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
-    }
+void VolumeScreen::onTurnRight() { // Увеличиваем громкость
+    // Отправляем команду в AudioTask (через очередь)
+    AudioMessage msg;
+    msg.type = CMD_VOLUME_UP;
+    xQueueSend(audioQueue, &msg, portMAX_DELAY);
+    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_VOLUME_UP");
+    // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
 }
 
-void VolumeScreen::onTurnLeft() {
-    // Уменьшаем громкость
-    int currentVolume = AudioManager::getInstance().getVolume();
-    int newVolume = currentVolume - 1;
-    if (newVolume < 0) newVolume = 0;
-    
-    if (newVolume != currentVolume) {
-        AudioManager::getInstance().setVolume(newVolume);
-        NVSManager::getInstance().setVolume(newVolume);
-        // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
-    }
+void VolumeScreen::onTurnLeft() {  // Уменьшаем громкость
+    // Отправляем команду в AudioTask (через очередь)
+    AudioMessage msg;
+    msg.type = CMD_VOLUME_DOWN;
+    xQueueSend(audioQueue, &msg, portMAX_DELAY);
+    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_VOLUME_DOWN");
+    // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
 }
 
-void VolumeScreen::onShortPress() {
-    // Play/Pause
-    AudioManager::getInstance().playPause();
+void VolumeScreen::onShortPress() { // Play/Pause
+    // Отправляем команду в AudioTask (через очередь)
+    AudioMessage msg;
+    msg.type = CMD_PLAY_PAUSE;
+    xQueueSend(audioQueue, &msg, portMAX_DELAY);
+    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_PLAY_PAUSE");
     // UI обновится через EVENT_PLAYBACK_INFO от AudioTask
 }
 
@@ -158,10 +167,9 @@ void VolumeScreen::refresh() {
     ESP_LOGD(TAG, "Refreshing VolumeScreen");
     
     // Принудительно обновляем отображение текущих данных
-    int currentVolume = AudioManager::getInstance().getVolume();
-    updateVolumeDisplay(currentVolume);
-    updateStatusDisplay(AudioManager::getInstance().isPlaying());
-
+    // пока ничего не делаем, так как при пробуждении дисплея из сна данные должны быть актуальными
+    
+    
 }
 
 // ==================== Вспомогательные методы ====================
@@ -170,15 +178,15 @@ void VolumeScreen::updateVolumeDisplay(int volume) {
     if (!m_volumeBar || !m_volumeLabel) return;
     
     // Ограничиваем значение
-    if (volume < 0) volume = 0;
-    if (volume > 21) volume = 21;
+    if (volume < MIN_VOLUME) volume = MIN_VOLUME;
+    if (volume > MAX_VOLUME) volume = MAX_VOLUME;
     
     // Обновляем прогресс-бар
     lv_bar_set_value(m_volumeBar, volume, LV_ANIM_ON);
     
     // Обновляем текстовую метку
     char buf[32];
-    snprintf(buf, sizeof(buf), "VOLUME: %d/21", volume);
+    snprintf(buf, sizeof(buf), "VOLUME: %d/%d", volume, MAX_VOLUME);
     lv_label_set_text(m_volumeLabel, buf);
 }
 

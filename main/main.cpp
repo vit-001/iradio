@@ -42,37 +42,60 @@ void setup() {
     // Запуск задач
     ESP_LOGI(TAG, "Starting tasks...");
     startAudioTask(0, 3, 16384);   // Ядро 0, приоритет 3, стек 16KB
-    startUiTask(1, 1, 4096);       // Ядро 1, приоритет 1, стек 4KB
+    startUiTask(1, 1, 8192);       // Ядро 1, приоритет 1, стек 4KB
     
     ESP_LOGI(TAG, "System ready!");
 }
 
 void loop() {
     static unsigned long lastCheck = 0;
-    if (millis() - lastCheck > 10000) {
+
+    static uint32_t minHeap = UINT32_MAX;
+    static uint32_t minLargest = UINT32_MAX;
+
+    if (millis() - lastCheck > 300000) {
         lastCheck = millis();
-        
-        // Мониторинг (опционально)
-        // AudioManager& audio = AudioManager::getInstance();
-        
-        // ESP_LOGI(TAG, "=== System Status ===");
-        // ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
-        // ESP_LOGI(TAG, "Status: %s | Volume: %d", 
-        //     audio.isPlaying() ? "Playing" : "Paused",
-        //     audio.getVolume());
-        
-        // TaskHandle_t audioHandle = getAudioTaskHandle();
-        // TaskHandle_t uiHandle = getUiTaskHandle();
-        
-        // if (audioHandle != NULL) {
-        //     ESP_LOGI(TAG, "Audio task free stack: %d bytes", 
-        //         uxTaskGetStackHighWaterMark(audioHandle));
-        // }
-        // if (uiHandle != NULL) {
-        //     ESP_LOGI(TAG, "UI task free stack: %d bytes", 
-        //         uxTaskGetStackHighWaterMark(uiHandle));
-        // }
+
+        AudioManager& audio = AudioManager::getInstance();
+
+        uint32_t heap = esp_get_free_heap_size();
+        uint32_t psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+        uint32_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+
+        if (heap < minHeap) minHeap = heap;
+        if (largest < minLargest) minLargest = largest;
+
+        ESP_LOGI(TAG, "=== System Status ===");
+
+        ESP_LOGI(TAG,
+                 "Heap=%u(min=%u) PSRAM=%u Largest=%u(min=%u)",
+                 heap,
+                 minHeap,
+                 psram,
+                 largest,
+                 minLargest);
+
+        ESP_LOGI(TAG,
+                 "Uptime=%lu sec | Status=%s | Volume=%d",
+                 millis() / 1000,
+                 audio.isPlaying() ? "Playing" : "Paused",
+                 audio.getVolume());
+
+        TaskHandle_t audioHandle = getAudioTaskHandle();
+        TaskHandle_t uiHandle = getUiTaskHandle();
+
+        if (audioHandle != NULL) {
+            ESP_LOGI(TAG,
+                     "Audio stack free: %u bytes",
+                     uxTaskGetStackHighWaterMark(audioHandle));
+        }
+
+        if (uiHandle != NULL) {
+            ESP_LOGI(TAG,
+                     "UI stack free: %u bytes",
+                     uxTaskGetStackHighWaterMark(uiHandle));
+        }
     }
-    
+
     vTaskDelay(pdMS_TO_TICKS(1000));
 }

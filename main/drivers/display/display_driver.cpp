@@ -19,7 +19,7 @@ static bool s_is_asleep = false;
 static void lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map) {
     esp_lcd_panel_handle_t panel = (esp_lcd_panel_handle_t)drv->user_data;
     esp_lcd_panel_draw_bitmap(panel, area->x1, area->y1, area->x2 + 1, area->y2 + 1, color_map);
-    lv_disp_flush_ready(drv);
+    // lv_disp_flush_ready(drv);
 }
 
 // Callback для DMA

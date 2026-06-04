@@ -95,10 +95,5 @@ void ScreenManager::handleAudioEvent(const AudioToUIMessage& msg) {
             screen->handleAudioEvent(msg);
         }
     }
-    
-    // Логируем для отладки (не для всех событий, чтобы не засорять)
-    if (msg.type != EVENT_PLAYBACK_INFO) {  
-        ESP_LOGD(TAG, "Audio event %d broadcast to %d screens", 
-                 msg.type, (int)m_screens.size());
-    }
+
 }

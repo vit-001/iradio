@@ -57,6 +57,7 @@ void AudioManager::volumeDown() {
 void AudioManager::play() {
     if (!_isPlaying && _currentUrl) {
         ESP_LOGI(TAG, "Starting playback");
+        setState(PlaybackState::Connecting);
         _audio.connecttohost(_currentUrl);
         _isPlaying = true;
     }
@@ -67,6 +68,7 @@ void AudioManager::pause() {
         ESP_LOGI(TAG, "Pausing playback");
         _audio.stopSong();
         _isPlaying = false;
+        setState(PlaybackState::Idle);
     }
 }
 
@@ -81,6 +83,57 @@ void AudioManager::playPause() {
 void AudioManager::connectToStream(const char* url) {
     ESP_LOGI(TAG, "Connecting to stream: %s", url);
     _currentUrl = url;
+    setState(PlaybackState::Connecting);
     _audio.connecttohost(url);
     _isPlaying = true;
+}
+
+PlaybackState AudioManager::getState() const
+{
+    return currentState;
+}
+
+static const char* playbackStateToString(PlaybackState state)
+{
+    switch (state)
+    {
+        case PlaybackState::Idle:
+            return "Idle";
+
+        case PlaybackState::Connecting:
+            return "Connecting";
+
+        case PlaybackState::Buffering:
+            return "Buffering";
+
+        case PlaybackState::Playing:
+            return "Playing";
+
+        case PlaybackState::Reconnecting:
+            return "Reconnecting";
+
+        case PlaybackState::Error:
+            return "Error";
+
+        default:
+            return "Unknown";
+    }
+}
+
+void AudioManager::setState(PlaybackState state)
+{
+    if (currentState == state)
+        return;
+
+    currentState = state;
+
+    ESP_LOGI(TAG,
+             "Playback state -> %s",
+             playbackStateToString(state));
+}
+
+void AudioManager::inBufferStatus() {
+
+    _audio.inBufferStatus();
+
 }

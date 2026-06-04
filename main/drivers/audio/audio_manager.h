@@ -2,6 +2,7 @@
 #define AUDIO_MANAGER_H
 
 #include "Audio.h"
+#include "audio_types.h"
 
 class AudioManager {
 public:
@@ -20,6 +21,11 @@ public:
     void setTone(int8_t bass, int8_t mid, int8_t treble);
     void setDefaultVolume(int vol);
     void connectToStream(const char* url);
+
+    PlaybackState getState() const;
+    void setState(PlaybackState state);
+
+    void inBufferStatus(); // для отладки: вывод статуса буфера в лог
     
 private:
     AudioManager();
@@ -31,6 +37,8 @@ private:
     int _volume;
     bool _isPlaying;
     const char* _currentUrl;
+
+    PlaybackState currentState = PlaybackState::Idle;
 };
 
 #endif // AUDIO_MANAGER_H
