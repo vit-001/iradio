@@ -4,13 +4,13 @@
  */
 
 #include "screen_manager.h"
-#include "screens/screen.h"
+#include "screens/screen_with_handlers.h"
 #include "esp_log.h"
 
 static const char* TAG = "SCREEN_MGR";
 
 // Forward declaration
-class Screen;
+class ScreenWithHandlers;
 
 // ==================== Реализация синглтона ====================
 
@@ -21,7 +21,7 @@ ScreenManager& ScreenManager::getInstance() {
 
 // ==================== Управление экранами ====================
 
-void ScreenManager::addScreen(Screen* screen) {
+void ScreenManager::addScreen(ScreenWithHandlers* screen) {
     if (!screen) {
         ESP_LOGE(TAG, "Cannot add null screen");
         return;
@@ -40,7 +40,7 @@ void ScreenManager::switchTo(int index) {
     
     // Скрываем текущий экран (если есть)
     if (m_currentScreen) {
-        m_currentScreen->Hide();
+        m_currentScreen->hide();
     }
     
     // Переключаемся на новый экран
@@ -48,7 +48,7 @@ void ScreenManager::switchTo(int index) {
     m_currentScreen = m_screens[m_currentIndex];
     
     // Делаем контейнер видимым внутри центральной области
-    m_currentScreen->Show();
+    m_currentScreen->show();
     
     ESP_LOGI(TAG, "Switched to screen index %d", m_currentIndex);
 }
@@ -71,7 +71,7 @@ void ScreenManager::previous() {
     switchTo(newIndex);
 }
 
-Screen* ScreenManager::getCurrentScreen() const {
+ScreenWithHandlers* ScreenManager::getCurrentScreen() const {
     return m_currentScreen;
 }
 
@@ -89,6 +89,14 @@ void ScreenManager::handleAudioEvent(const AudioToUIMessage& msg) {
         if (screen) {
             screen->handleAudioEvent(msg);
         }
+    }
+
+    // Также рассылаем события в статус-бары, если они есть
+    if (m_topBar) {
+        m_topBar->handleAudioEvent(msg);
+    }
+    if (m_bottomBar) {
+        m_bottomBar->handleAudioEvent(msg);
     }
 
 }

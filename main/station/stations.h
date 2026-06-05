@@ -18,8 +18,15 @@ static const char* STATION_NAMES[] = {
     "Maximum",
     "Like FM",
     "Radio Record",
-    "Nashe Radio",
-    "Monte Carlo"
+    "Наше радио",
+    "Monte Carlo",
+    "Love Radio",
+    "Comedy Radio",
+    "Rock FM",
+    "Studio 21",
+    "Piter FM",
+    "Серебряный дождь",
+    "Русское радио"
 };
 
 static const char* STATION_URLS[] = {
@@ -27,12 +34,19 @@ static const char* STATION_URLS[] = {
     "http://ep128.streamr.ru",
     "http://hitfm.hostingradio.ru/hitfm128.mp3",
     "https://pub0201.101.ru/stream/trust/mp3/128/24",
-    "https://hls-01-gpm.hostingradio.ru/energyfm812/128/playlist.m3u8",
+    "http://23.105.238.4/gpm-energyfm495.aacp",
     "https://maximum.hostingradio.ru/maximum128.mp3",
-    "https://hls-01-gpm.hostingradio.ru/likefm812/128/playlist.m3u8",
+    "http://23.105.238.4/gpm-likefm495.aacp",
     "https://radiorecord.hostingradio.ru/rr_spb",
     "http://nashe1.hostingradio.ru/nashespb128.mp3",
-    "https://hls-01-montecarlo.hostingradio.ru/montecarlo-spb/playlist.m3u8"
+    "http://montecarloreg.hostingradio.ru/spb.montecarlo160.aacp",
+    "http://microit.n340.com:9000/VgMv0WV17ZVx1uuo_12_love_128_reg_45",
+    "http://23.105.238.4/gpm-comedyradio495.aacp",
+    "http://nashe1.hostingradio.ru/rock-256",
+    "http://78.140.197.238:9877/SPB_studio21",
+    "http://78.140.208.20:8801/pfm_spb",
+    "http://s0.radioheart.ru:8000/ird",
+    "http://23.105.238.4/spb.rusradio128.mp3"
 };
 
 #define STATIONS_COUNT (sizeof(STATION_NAMES) / sizeof(STATION_NAMES[0]))

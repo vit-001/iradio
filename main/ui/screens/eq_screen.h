@@ -19,13 +19,13 @@
 #ifndef UI_SCREENS_EQ_SCREEN_H
 #define UI_SCREENS_EQ_SCREEN_H
 
-#include "screen.h"
+#include "screen_with_handlers.h"
 
 /**
  * @class EQScreen
  * @brief Экран для настройки эквалайзера
  */
-class EQScreen : public Screen {
+class EQScreen : public ScreenWithHandlers {
 public:
     /**
      * @brief Конструктор

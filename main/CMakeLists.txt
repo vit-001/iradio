@@ -11,7 +11,7 @@ idf_component_register(
         drivers/nvs/nvs_manager.cpp
         ui/screen_manager.cpp
         ui/root_screen.cpp
-        ui/screens/screen.cpp
+        ui/screens/screen_with_handlers.cpp
         ui/screens/volume_screen.cpp
         ui/screens/eq_screen.cpp
         ui/screens/station_screen.cpp
@@ -22,7 +22,7 @@ idf_component_register(
         fonts/inter_medium_18.c
         fonts/roboto_mono_12.c
         fonts/roboto_mono_14.c
-        fonts/bebas_neue_24.c
+        fonts/oswald_sb_24.c
     INCLUDE_DIRS 
         "."
         "tasks"

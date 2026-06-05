@@ -17,6 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "esp_wifi_types.h"
+#include "drivers/audio/audio_types.h"
 
 /**
  * @enum AudioToUIEventType
@@ -28,6 +29,8 @@ enum AudioToUIEventType : uint8_t {
     EVENT_TRACK_CHANGED,       ///< Сменился трек
     EVENT_STATION_CHANGED,     ///< Сменилась станция
     EVENT_VOLUME_CHANGED,      ///< Изменилась громкость
+    EVENT_BITRATE_CHANGED,      ///< Изменился битрейт
+    EVENT_PLAYBACK_STATE_CHANGED, ///< Изменилось состояние воспроизведения (Playing, Paused, Reconnecting)
     
     // ===== Статус WiFi =====
     EVENT_WIFI_STATUS,         ///< Статус подключения WiFi
@@ -56,6 +59,17 @@ struct PlaybackInfo {
     uint32_t bitrate;          ///< Битрейт (kbps)
 };
 
+
+/**
+ * @struct PlaybackState
+ * @brief Состояние воспроизведения
+ */
+struct PlaybackStateInfo {
+    PlaybackState state ;     ///< Идёт ли воспроизведение
+    bool is_playing;         ///< Идёт ли воспроизведение
+};
+
+
 /**
  * @struct WiFiStatus
  * @brief Информация о WiFi подключении
@@ -63,9 +77,6 @@ struct PlaybackInfo {
 struct WiFiStatus {
     bool is_connected;         ///< Подключено ли к WiFi
     int8_t rssi;               ///< Уровень сигнала (-100..0 dBm)
-    uint8_t channel;           ///< Канал (1-13)
-    char ssid[33];             ///< Имя сети
-    char ip[16];               ///< IP адрес
 };
 
 /**
@@ -105,7 +116,8 @@ struct AudioToUIMessage {
     AudioToUIEventType type;   ///< Тип события
     
     union {
-        PlaybackInfo playback;      ///< EVENT_PLAYBACK_INFO
+        PlaybackInfo playbackInfo;      ///< EVENT_PLAYBACK_INFO
+        PlaybackStateInfo playbackState;///< EVENT_PLAYBACK_STATE_CHANGED
         char url[256];              ///< EVENT_STATION_CHANGED
         WiFiStatus wifi;            ///< EVENT_WIFI_STATUS
         EQValues eq;                ///< EVENT_EQ_VALUES
@@ -113,6 +125,7 @@ struct AudioToUIMessage {
         Notification notification;  ///< EVENT_NOTIFICATION / EVENT_ERROR
         int8_t rssi;                ///< EVENT_WIFI_RSSI (только сигнал)
         int volume;                 ///< EVENT_VOLUME_CHANGED
+        uint32_t bitrate;           ///< EVENT_BITRATE_CHANGED
     } data;
 };
 

@@ -6,7 +6,6 @@
 #include "volume_screen.h"
 #include "config.h"
 #include "ui/screen_manager.h"
-//#include "drivers/audio/audio_manager.h"
 #include "station/stations.h"
 #include "messages/audio_messages.h"
 #include "drivers/nvs/nvs_manager.h"
@@ -19,7 +18,7 @@ static const char* TAG = "VOLUME_SCREEN";
 // ==================== Конструктор ====================
 
 VolumeScreen::VolumeScreen(ScreenManager* manager, lv_obj_t* parent) 
-    : Screen(manager, parent) {
+    : ScreenWithHandlers(manager, parent) {
 }
 
 // ==================== Жизненный цикл ====================

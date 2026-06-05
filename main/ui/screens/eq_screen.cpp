@@ -21,7 +21,7 @@ const char* EQScreen::BAND_NAMES[] = {"BASS", "MID", "TREBLE"};
 // ==================== Конструктор ====================
 
 EQScreen::EQScreen(ScreenManager* manager, lv_obj_t* parent) 
-    : Screen(manager, parent) {
+    : ScreenWithHandlers(manager, parent) {
 }
 
 // ==================== Жизненный цикл ====================

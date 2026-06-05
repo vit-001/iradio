@@ -72,13 +72,13 @@ static void initScreens(ScreenManager& mgr) {
     
     // Создаём LVGL объекты для каждого экрана, сразу их скрывая
     s_volumeScreen->create();
-    s_volumeScreen->Hide();
+    s_volumeScreen->hide();
 
     s_stationScreen->create();
-    s_stationScreen->Hide();
+    s_stationScreen->hide();
 
     s_eqScreen->create();
-    s_eqScreen->Hide();
+    s_eqScreen->hide();
     
     ESP_LOGI(TAG, "All screens initialized");
 }
@@ -164,21 +164,21 @@ void uiTaskFunction(void* parameter) {
             
             // Логируем полученные события (для отладки)
             switch (msg.type) {
-                case EVENT_PLAYBACK_INFO:
-                    ESP_LOGD(TAG, "Received playback info: station='%s', song='%s', vol=%d, playing=%d",
-                             msg.data.playback.station_name,
-                             msg.data.playback.song_title,
-                             msg.data.playback.volume,
-                             msg.data.playback.is_playing);
-                    break;
+                // case EVENT_PLAYBACK_INFO:
+                //     ESP_LOGD(TAG, "Received playback info: station='%s', song='%s', vol=%d, playing=%d",
+                //              msg.data.playback.station_name,
+                //              msg.data.playback.song_title,
+                //              msg.data.playback.volume,
+                //              msg.data.playback.is_playing);
+                //     break;
                     
                 case EVENT_VOLUME_CHANGED:
                     ESP_LOGD(TAG, "Received volume changed: %d", msg.data.volume);
                     break;
                       
                 case EVENT_WIFI_STATUS:
-                    ESP_LOGD(TAG, "Received WiFi status: rssi=%d, ssid='%s'",
-                             msg.data.wifi.rssi, msg.data.wifi.ssid);
+                    ESP_LOGD(TAG, "Received WiFi status: rssi=%d, connected=%b",
+                             msg.data.wifi.rssi, msg.data.wifi.is_connected);
                     break;
                 case EVENT_EQ_VALUES:
                     ESP_LOGD(TAG, "Received EQ values: B=%d, M=%d, T=%d",

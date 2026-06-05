@@ -18,21 +18,17 @@ extern QueueHandle_t audioToUIQueue;
 // Глобальный callback для информации от библиотеки Audio
 void my_audio_info(Audio::msg_t m) {
     AudioManager& audio = AudioManager::getInstance();
+
+    AudioToUIMessage audMsg;
+
     switch (m.e) {
         case Audio::evt_info:{
-            ESP_LOGI(TAG, "Stream info: %s", m.msg);
-
-            if (strstr(m.msg, "slow stream")) {
-                audio.setState(PlaybackState::Buffering);
-            }
-            else if (strstr(m.msg, "Stream lost")) {
-                audio.setState(PlaybackState::Reconnecting);
-            }
+            ESP_LOGI(TAG, "Stream info: /%d/ %s", m.e, m.msg);
 
             break;
         }
         case Audio::evt_id3data:
-            ESP_LOGI(TAG, "ID3 metadata: %s", m.msg);
+            ESP_LOGI(TAG, "ID3 metadata: /%d/ %s", m.e, m.msg);
             // Обновляем дисплей с информацией о треке
             // tft.fillRect(10, 35, tft.width() - 20, 20, TFT_BLACK);
             // tft.setCursor(10, 45);
@@ -41,19 +37,22 @@ void my_audio_info(Audio::msg_t m) {
             // tft.print(m.msg);
             break;
         case Audio::evt_streamtitle:
-            ESP_LOGI(TAG, "Stream title: %s", m.msg);
-
-            audio.setState(PlaybackState::Playing);
+            ESP_LOGI(TAG, "Stream title: /%d/ %s", m.e, m.msg);
 
             break;
         case Audio::evt_bitrate:
-            ESP_LOGI(TAG, "Bitrate: %s", m.msg);
+            ESP_LOGI(TAG, "Bitrate: /%d/ %s", m.e, m.msg);
+            audMsg.type = EVENT_BITRATE_CHANGED;
+            audMsg.data.bitrate = atoi(m.msg);
+            xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
+            ESP_LOGI(TAG, "Bitrate updated to %d", audMsg.data.bitrate);
+
             break;
         case Audio::evt_eof:
-            ESP_LOGW(TAG, "End of stream: %s", m.msg);
+            ESP_LOGW(TAG, "End of stream: /%d/ %s", m.e, m.msg);
             break;
         default:
-            ESP_LOGD(TAG, "Event %d: %s", m.e, m.msg);
+            ESP_LOGD(TAG, "Event %d: /%d/ %s", m.e, m.e, m.msg);
             break;
     }
 }
@@ -105,7 +104,13 @@ void processAudioCommands(AudioManager& audio) {
                 
             case CMD_PLAY_URL:
                 ESP_LOGI(TAG, "Playing URL: %s", msg.url);
+                // сбрасываем битрейт при смене станции, чтобы не показывать старый битрейт от предыдущей станции
+                audMsg.type = EVENT_BITRATE_CHANGED;
+                audMsg.data.bitrate = 0;
+                xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
+                // подключаем новую станцию
                 audio.connectToStream(msg.url);
+                // отправляем событие смены станции в UI
                 audMsg.type = EVENT_STATION_CHANGED;
                 strncpy(audMsg.data.url, msg.url, sizeof(audMsg.data.url) - 1);
                 audMsg.data.url[sizeof(audMsg.data.url) - 1] = '\0';
@@ -131,27 +136,14 @@ void audioTaskFunction(void* parameter) {
     // Регистрация callback
     Audio::audio_info_callback = my_audio_info;
     ESP_LOGD(TAG, "Callback registered");
-    
-    // WiFi подключение
-    ESP_LOGI(TAG, "Connecting to WiFi SSID: %s", ssid);
-    WiFi.begin(ssid, password);
-    
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        attempts++;
-        ESP_LOGD(TAG, "Waiting for WiFi... (%d sec)", attempts / 2);
-        if (attempts > 30) {
-            ESP_LOGW(TAG, "WiFi timeout, retrying...");
-            attempts = 0;
-            WiFi.reconnect();
-        }
+   
+    // Wi-Fi подключение
+    audio.setWiFiCredentials(ssid, password);
+    if (!audio.connectWiFi()) {
+        ESP_LOGE(TAG, "WiFi connection failed, task will stop");
+        vTaskDelete(NULL);
     }
-    
-    ESP_LOGI(TAG, "WiFi connected successfully!");
-    ESP_LOGI(TAG, "IP address: %s", WiFi.localIP().toString().c_str());
-    ESP_LOGI(TAG, "RSSI: %d dBm", WiFi.RSSI());
-    
+
     // Запуск аудио потока
     ESP_LOGI(TAG, "Connecting to stream: %s", radio_url);
     audio.connectToStream(radio_url);

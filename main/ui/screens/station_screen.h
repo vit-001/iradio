@@ -14,13 +14,13 @@
 #ifndef UI_SCREENS_STATION_SCREEN_H
 #define UI_SCREENS_STATION_SCREEN_H
 
-#include "screen.h"
+#include "screen_with_handlers.h"
 
 /**
  * @class StationScreen
  * @brief Экран для выбора радиостанции из списка
  */
-class StationScreen : public Screen {
+class StationScreen : public ScreenWithHandlers {
 public:
     /**
      * @brief Конструктор

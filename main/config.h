@@ -55,7 +55,7 @@ extern const char* radio_url;
 #define MIN_VOLUME 0
 
 // Задержки антидребезга (мс)
-#define DEBOUNCE_DELAY 100
+#define DEBOUNCE_DELAY 20
 #define BUTTON_DELAY   200
 
 

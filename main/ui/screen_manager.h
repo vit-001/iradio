@@ -14,7 +14,7 @@
 #define UI_SCREEN_MANAGER_H
 
 #include "messages/audio_to_ui_messages.h"
-#include "screens/screen.h"
+#include "screens/screen_with_handlers.h"
 #include "ui/status_bars/top_bar.h"
 #include "ui/status_bars/bottom_bar.h"
 #include <vector>
@@ -47,7 +47,7 @@ public:
      * @note Экраны добавляются в порядке, соответствующем циклическому переключению.
      *       Первый добавленный экран будет показан при switchTo(0).
      */
-    void addScreen(Screen* screen);
+    void addScreen(ScreenWithHandlers* screen);
     
     /**
      * @brief Переключиться на следующий экран (по кругу)
@@ -87,7 +87,7 @@ public:
      * @brief Получить текущий экран
      * @return указатель на текущий экран, или nullptr если нет экранов
      */
-    Screen* getCurrentScreen() const;
+    ScreenWithHandlers* getCurrentScreen() const;
     
     /**
      * @brief Получить индекс текущего экрана
@@ -172,9 +172,9 @@ private:
     ScreenManager(const ScreenManager&) = delete;
     ScreenManager& operator=(const ScreenManager&) = delete;
     
-    std::vector<Screen*> m_screens;      ///< Список всех экранов
+    std::vector<ScreenWithHandlers*> m_screens;      ///< Список всех экранов
     int m_currentIndex = -1;             ///< Индекс текущего экрана
-    Screen* m_currentScreen = nullptr;   ///< Указатель на текущий экран (кэш)
+    ScreenWithHandlers* m_currentScreen = nullptr;   ///< Указатель на текущий экран (кэш)
 
     TopBar* m_topBar = nullptr;          ///< Указатель на верхнюю панель
     BottomBar* m_bottomBar = nullptr;    ///< Указатель на нижнюю панель

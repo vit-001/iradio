@@ -18,13 +18,13 @@
 #ifndef UI_SCREENS_VOLUME_SCREEN_H
 #define UI_SCREENS_VOLUME_SCREEN_H
 
-#include "screen.h"
+#include "screen_with_handlers.h"
 
 /**
  * @class VolumeScreen
  * @brief Экран для отображения и управления воспроизведением
  */
-class VolumeScreen : public Screen {
+class VolumeScreen : public ScreenWithHandlers {
 public:
     /**
      * @brief Конструктор

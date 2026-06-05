@@ -21,7 +21,7 @@ static const char* TAG = "STATION_SCREEN";
 // ==================== Конструктор ====================
 
 StationScreen::StationScreen(ScreenManager* manager, lv_obj_t* parent) 
-    : Screen(manager, parent) {
+    : ScreenWithHandlers(manager, parent) {
 }
 
 // ==================== Жизненный цикл ====================
