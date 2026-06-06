@@ -144,9 +144,9 @@ void audioTaskFunction(void* parameter) {
         vTaskDelete(NULL);
     }
 
-    // Запуск аудио потока
-    ESP_LOGI(TAG, "Connecting to stream: %s", radio_url);
-    audio.connectToStream(radio_url);
+    // // Запуск аудио потока
+    // ESP_LOGI(TAG, "Connecting to stream: %s", radio_url);
+    // audio.connectToStream(radio_url);
     
     // Основной цикл
     unsigned long lastLoopLog = 0;

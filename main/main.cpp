@@ -53,7 +53,7 @@ void loop() {
     static uint32_t minHeap = UINT32_MAX;
     static uint32_t minLargest = UINT32_MAX;
 
-    if (millis() - lastCheck > 300000) {
+    if (millis() - lastCheck > 3600000) {
         lastCheck = millis();
 
         AudioManager& audio = AudioManager::getInstance();

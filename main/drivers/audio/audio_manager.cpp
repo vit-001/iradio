@@ -12,8 +12,9 @@ extern QueueHandle_t audioToUIQueue;
 // -----------------------------------------------------------------------------
 AudioManager::AudioManager() 
     : _volume(10),
-      _isPlaying(false),
-      _currentUrl(nullptr) {
+      _isPlaying(false) 
+      {
+    _currentUrl[0] = '\0';
 }
 
 AudioManager::~AudioManager() {
@@ -170,7 +171,7 @@ void AudioManager::processReconnecting() {
     }
 
     // Если Wi-Fi есть и URL известен — переподключаемся к станции
-    if (_currentUrl) {
+    if (_currentUrl[0] != '\0') {
         ESP_LOGI(TAG, "Reconnecting stream: %s", _currentUrl);
         _audio.connecttohost(_currentUrl);
         setState(PlaybackState::Connecting);
@@ -238,7 +239,7 @@ void AudioManager::volumeDown() {
 // Управление воспроизведением
 // -----------------------------------------------------------------------------
 void AudioManager::play() {
-    if (!_isPlaying && _currentUrl) {
+    if (!_isPlaying && _currentUrl[0] != '\0') {
         ESP_LOGI(TAG, "Starting playback");
         setState(PlaybackState::Connecting);
         _audio.pauseResume();
@@ -267,10 +268,13 @@ void AudioManager::playPause() {
 // Подключение к новой станции
 // -----------------------------------------------------------------------------
 void AudioManager::connectToStream(const char* url) {
-    ESP_LOGI(TAG, "Connecting to stream: %s", url);
-    _currentUrl = url;
+    strncpy(_currentUrl, url, sizeof(_currentUrl) - 1);
+    _currentUrl[sizeof(_currentUrl) - 1] = '\0';
+
+    ESP_LOGI(TAG, "Connecting to stream: %s", _currentUrl);
+
     setState(PlaybackState::Connecting);
-    _audio.connecttohost(url);
+    _audio.connecttohost(_currentUrl);
     _isPlaying = true;
 }
 

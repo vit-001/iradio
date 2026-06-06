@@ -197,7 +197,7 @@ private:
 
     int _volume;
     bool _isPlaying;
-    const char* _currentUrl;
+    char _currentUrl[256] = {0};
 
     // ------------------------------------------------------------------------
     // Wi-Fi
