@@ -20,35 +20,35 @@ public:
     /**
      * @brief Поворот энкодера вправо
      */
-    virtual void onTurnRight() {
+    virtual void onTurnRight(int enc_no) {
         // По умолчанию без реакции
     }
     
     /**
      * @brief Поворот энкодера влево
      */
-    virtual void onTurnLeft() {
+    virtual void onTurnLeft(int enc_no) {
         // По умолчанию без реакции
     }
     
     /**
      * @brief Короткое нажатие
      */
-    virtual void onShortPress() {
+    virtual void onShortPress(int enc_no) {
         // По умолчанию без реакции
     }
     
     /**
      * @brief Долгое нажатие (обычно 800+ мс)
      */
-    virtual void onLongPress() {
+    virtual void onLongPress(int enc_no) {
         // По умолчанию без реакции
     }
     
     /**
      * @brief Двойное нажатие
      */
-    virtual void onDoublePress() {
+    virtual void onDoublePress(int enc_no) {
         // По умолчанию без реакции
     }
 };

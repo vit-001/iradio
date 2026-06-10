@@ -61,17 +61,17 @@ public:
     /**
      * @brief Поворот вправо → увеличение громкости
      */
-    void onTurnRight() override;
+    void onTurnRight(int enc_no) override;
     
     /**
      * @brief Поворот влево → уменьшение громкости
      */
-    void onTurnLeft() override;
+    void onTurnLeft(int enc_no) override;
     
     /**
      * @brief Короткое нажатие → Play/Pause
      */
-    void onShortPress() override;
+    void onShortPress(int enc_no) override;
     
     // onLongPress и onDoublePress оставляем по умолчанию (переключение экрана)
 

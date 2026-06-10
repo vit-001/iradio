@@ -18,6 +18,11 @@ extern const char* radio_url;
 #define ENC_B    15
 #define ENC_BTN  17
 
+// Пины для энкодера №2
+#define ENC_2_A    41
+#define ENC_2_B    42
+#define ENC_2_BTN  40
+
 // Пины для SD карты
 #define SD_CS    47
 #define SD_MOSI  18

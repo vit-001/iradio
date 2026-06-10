@@ -137,11 +137,37 @@ void AudioManager::loop() {
             break;
 
         case PlaybackState::Connecting:
-            // Когда появится буфер — начинаем воспроизведение
-            if (_audio.inBufferFilled() > 0) {
+        {
+            _reconnectingLoopCount++;
+
+            if (_reconnectingLoopCount <= 10) {
+                ESP_LOGI(TAG,
+                        "Connecting... loop #%lu, buffer=%u",
+                        _reconnectingLoopCount,
+                        _audio.inBufferFilled());
+            }
+
+            uint32_t filled = _audio.inBufferFilled();
+
+            // Буфер начал наполняться — считаем подключение успешным
+            if (filled > 4096) {
+                ESP_LOGI(TAG, "Buffer filled on loop #%lu, connection successful!", _reconnectingLoopCount);
+                _reconnectingLoopCount = 0;
                 setState(PlaybackState::Playing);
             }
+
+            // Таймаут подключения 10 секунд
+            else if (millis() - _connectStartTime > 10000) {
+                ESP_LOGW(TAG,
+                        "Connect timeout, buffer=%u",
+                        filled);
+
+                _reconnectingLoopCount = 0;
+                setState(PlaybackState::Reconnecting);
+            }
+
             break;
+        }
 
         case PlaybackState::Playing:
             // Логика управления Playing уже в таймерной проверке буфера
@@ -152,6 +178,11 @@ void AudioManager::loop() {
             break;
 
         case PlaybackState::Reconnecting:
+            ESP_LOGW(TAG, "Stopping stream before reconnect");
+            _audio.stopSong();
+
+            vTaskDelay(pdMS_TO_TICKS(500));
+
             processReconnecting();
             break;
 
@@ -164,8 +195,17 @@ void AudioManager::loop() {
 // Обработка Reconnecting
 // -----------------------------------------------------------------------------
 void AudioManager::processReconnecting() {
+    ESP_LOGI(TAG,
+        "Reconnecting state, WiFi=%d, RSSI=%d, buffer=%u, url='%s'",
+        WiFi.status(),
+        WiFi.RSSI(),
+        _audio.inBufferFilled(),
+        _currentUrl);
+
+
     // Если нет Wi-Fi — пробуем восстановить соединение
     if (!_wifiConnected) {
+        ESP_LOGI(TAG,"Trying to reconnect WiFi...");
         WiFi.reconnect();
         return;
     }
@@ -173,6 +213,8 @@ void AudioManager::processReconnecting() {
     // Если Wi-Fi есть и URL известен — переподключаемся к станции
     if (_currentUrl[0] != '\0') {
         ESP_LOGI(TAG, "Reconnecting stream: %s", _currentUrl);
+
+        _connectStartTime = millis();
         _audio.connecttohost(_currentUrl);
         setState(PlaybackState::Connecting);
     }
@@ -272,6 +314,7 @@ void AudioManager::connectToStream(const char* url) {
     _currentUrl[sizeof(_currentUrl) - 1] = '\0';
 
     ESP_LOGI(TAG, "Connecting to stream: %s", _currentUrl);
+    _connectStartTime = millis();
 
     setState(PlaybackState::Connecting);
     _audio.connecttohost(_currentUrl);

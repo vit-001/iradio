@@ -153,19 +153,19 @@ void EQScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void EQScreen::onTurnRight() {
+void EQScreen::onTurnRight(int enc_no) {
     int newValue = getCurrentBandValue() + 1;
     if (newValue > MAX_VALUE) newValue = MAX_VALUE;
     setCurrentBandValue(newValue);
 }
 
-void EQScreen::onTurnLeft() {
+void EQScreen::onTurnLeft(int enc_no) {
     int newValue = getCurrentBandValue() - 1;
     if (newValue < MIN_VALUE) newValue = MIN_VALUE;
     setCurrentBandValue(newValue);
 }
 
-void EQScreen::onShortPress() {
+void EQScreen::onShortPress(int enc_no) {
     // Переключение на следующую полосу
     m_currentBand = (Band)((m_currentBand + 1) % BAND_COUNT);
     updateDisplay();

@@ -124,7 +124,7 @@ void VolumeScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void VolumeScreen::onTurnRight() { // Увеличиваем громкость
+void VolumeScreen::onTurnRight(int enc_no) { // Увеличиваем громкость
     // Отправляем команду в AudioTask (через очередь)
     AudioMessage msg;
     msg.type = CMD_VOLUME_UP;
@@ -133,7 +133,7 @@ void VolumeScreen::onTurnRight() { // Увеличиваем громкость
     // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
 }
 
-void VolumeScreen::onTurnLeft() {  // Уменьшаем громкость
+void VolumeScreen::onTurnLeft(int enc_no) {  // Уменьшаем громкость
     // Отправляем команду в AudioTask (через очередь)
     AudioMessage msg;
     msg.type = CMD_VOLUME_DOWN;
@@ -142,7 +142,7 @@ void VolumeScreen::onTurnLeft() {  // Уменьшаем громкость
     // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
 }
 
-void VolumeScreen::onShortPress() { // Play/Pause
+void VolumeScreen::onShortPress(int enc_no) { // Play/Pause
     // Отправляем команду в AudioTask (через очередь)
     AudioMessage msg;
     msg.type = CMD_PLAY_PAUSE;

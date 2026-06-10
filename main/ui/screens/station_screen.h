@@ -55,17 +55,17 @@ public:
     /**
      * @brief Поворот вправо → следующая станция
      */
-    void onTurnRight() override;
+    void onTurnRight(int enc_no) override;
     
     /**
      * @brief Поворот влево → предыдущая станция
      */
-    void onTurnLeft() override;
+    void onTurnLeft(int enc_no) override;
     
     /**
      * @brief Короткое нажатие → выбрать станцию, вернуться на главный экран
      */
-    void onShortPress() override;
+    void onShortPress(int enc_no) override;
     
     // onLongPress и onDoublePress оставляем по умолчанию (переключение экрана)
     

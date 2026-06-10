@@ -104,17 +104,20 @@ void processAudioCommands(AudioManager& audio) {
                 
             case CMD_PLAY_URL:
                 ESP_LOGI(TAG, "Playing URL: %s", msg.url);
+                
                 // сбрасываем битрейт при смене станции, чтобы не показывать старый битрейт от предыдущей станции
                 audMsg.type = EVENT_BITRATE_CHANGED;
                 audMsg.data.bitrate = 0;
                 xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
-                // подключаем новую станцию
-                audio.connectToStream(msg.url);
+
                 // отправляем событие смены станции в UI
                 audMsg.type = EVENT_STATION_CHANGED;
                 strncpy(audMsg.data.url, msg.url, sizeof(audMsg.data.url) - 1);
                 audMsg.data.url[sizeof(audMsg.data.url) - 1] = '\0';
                 xQueueSend(audioToUIQueue, &audMsg, portMAX_DELAY);
+
+                // подключаем новую станцию
+                audio.connectToStream(msg.url);
                 break;
                 
             case CMD_PLAY_PAUSE:

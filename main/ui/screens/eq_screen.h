@@ -60,17 +60,17 @@ public:
     /**
      * @brief Поворот вправо → увеличить значение текущей полосы
      */
-    void onTurnRight() override;
+    void onTurnRight(int enc_no) override;
     
     /**
      * @brief Поворот влево → уменьшить значение текущей полосы
      */
-    void onTurnLeft() override;
+    void onTurnLeft(int enc_no) override;
     
     /**
      * @brief Короткое нажатие → переключить полосу
      */
-    void onShortPress() override;
+    void onShortPress(int enc_no) override;
     
     // onLongPress и onDoublePress оставляем по умолчанию (переключение экрана)
     

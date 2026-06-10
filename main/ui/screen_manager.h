@@ -142,27 +142,27 @@ public:
     /**
      * @brief Делегировать поворот вправо текущему экрану
      */
-    void onTurnRight()   { if (m_currentScreen) m_currentScreen->onTurnRight(); }
+    void onTurnRight(int enc_no)   { if (m_currentScreen) m_currentScreen->onTurnRight(enc_no); }
     
     /**
      * @brief Делегировать поворот влево текущему экрану
      */
-    void onTurnLeft()    { if (m_currentScreen) m_currentScreen->onTurnLeft(); }
+    void onTurnLeft(int enc_no)    { if (m_currentScreen) m_currentScreen->onTurnLeft(enc_no); }
     
     /**
      * @brief Делегировать короткое нажатие текущему экрану
      */
-    void onShortPress()  { if (m_currentScreen) m_currentScreen->onShortPress(); }
+    void onShortPress(int enc_no)  { if (m_currentScreen) m_currentScreen->onShortPress(enc_no); }
     
     /**
      * @brief Делегировать долгое нажатие текущему экрану
      */
-    void onLongPress()   { if (m_currentScreen) m_currentScreen->onLongPress(); }
+    void onLongPress(int enc_no)   { if (m_currentScreen) m_currentScreen->onLongPress(enc_no); }
     
     /**
      * @brief Делегировать двойное нажатие текущему экрану
      */
-    void onDoublePress() { if (m_currentScreen) m_currentScreen->onDoublePress(); }
+    void onDoublePress(int enc_no) { if (m_currentScreen) m_currentScreen->onDoublePress(enc_no); }
     
 private:
     // Приватный конструктор для синглтона

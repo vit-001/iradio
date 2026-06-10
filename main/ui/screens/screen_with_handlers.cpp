@@ -2,7 +2,7 @@
 #include "drivers/nvs/nvs_manager.h"
 #include "screen_manager.h"  
 
-void ScreenWithHandlers::onLongPress()  {
+void ScreenWithHandlers::onLongPress(int enc_no) {
 
     // Сохраняем все настройки перед переключением
     NVSManager::getInstance().commit();
@@ -12,7 +12,7 @@ void ScreenWithHandlers::onLongPress()  {
     }
 }
 
-void ScreenWithHandlers::onDoublePress()  {
+void ScreenWithHandlers::onDoublePress(int enc_no)  {
     
     // Сохраняем все настройки перед переключением
     NVSManager::getInstance().commit();

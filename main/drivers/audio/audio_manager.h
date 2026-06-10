@@ -241,4 +241,10 @@ private:
      * @brief Текущее состояние аудиоподсистемы.
      */
     PlaybackState currentState = PlaybackState::Idle;
+
+    unsigned long _reconnectingLoopCount = 0;
+
+    // Время начала подключения/переподключения
+    uint32_t _connectStartTime = 0;
+
 };

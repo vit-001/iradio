@@ -25,8 +25,8 @@ public:
     
     virtual ~ScreenWithHandlers() = default;
 
-    void onLongPress() override;
-    void onDoublePress() override; 
+    void onLongPress(int enc_no) override;
+    void onDoublePress(int enc_no) override; 
     
     // Все методы из интерфейсов уже есть, но могут быть переопределены
 };

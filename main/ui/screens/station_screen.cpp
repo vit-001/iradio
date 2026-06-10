@@ -116,7 +116,7 @@ void StationScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void StationScreen::onTurnLeft() {
+void StationScreen::onTurnLeft(int enc_no) {
     // Следующая станция
     int newIndex = m_currentStationIndex + 1;
     if (newIndex >= STATIONS_COUNT) {
@@ -125,7 +125,7 @@ void StationScreen::onTurnLeft() {
     setCurrentStation(newIndex);
 }
 
-void StationScreen::onTurnRight() {
+void StationScreen::onTurnRight(int enc_no) {
     // Предыдущая станция
     int newIndex = m_currentStationIndex - 1;
     if (newIndex < 0) {
@@ -134,7 +134,7 @@ void StationScreen::onTurnRight() {
     setCurrentStation(newIndex);
 }
 
-void StationScreen::onShortPress() {
+void StationScreen::onShortPress(int enc_no) {
 
     // Немедленное сохранение в NVS
     NVSManager::getInstance().commit();  // немедленное сохранение
