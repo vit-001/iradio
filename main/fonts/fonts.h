@@ -5,8 +5,7 @@
  * Шрифты сгенерированы через LVGL Font Converter с BPP=4
  */
 
-#ifndef FONTS_H
-#define FONTS_H
+#pragma once
 
 #include "lvgl.h"
 
@@ -31,4 +30,3 @@ LV_FONT_DECLARE(oswald_sb_24);     // Громкость, часы (24px)
 // Функция инициализации
 void init_fonts(void);
 
-#endif // FONTS_H

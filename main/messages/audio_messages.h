@@ -1,5 +1,4 @@
-#ifndef AUDIO_MESSAGES_H
-#define AUDIO_MESSAGES_H
+#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -27,4 +26,3 @@ struct AudioMessage {
 // Глобальная очередь (объявляем в main.cpp)
 extern QueueHandle_t audioQueue;
 
-#endif // AUDIO_MESSAGES_H

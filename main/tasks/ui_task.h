@@ -5,8 +5,7 @@
  * Отвечает за инициализацию дисплея, экранов и обработку UI.
  */
 
-#ifndef UI_TASK_H
-#define UI_TASK_H
+#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -25,4 +24,3 @@ void startUiTask(int core, int priority, int stackSize);
  */
 TaskHandle_t getUiTaskHandle();
 
-#endif // UI_TASK_H

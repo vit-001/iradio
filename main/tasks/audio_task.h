@@ -1,5 +1,4 @@
-#ifndef AUDIO_TASK_H
-#define AUDIO_TASK_H
+#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -13,4 +12,3 @@ TaskHandle_t getAudioTaskHandle();
 // Остановка аудио задачи
 void stopAudioTask();
 
-#endif // AUDIO_TASK_H

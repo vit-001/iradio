@@ -3,8 +3,7 @@
  * @brief Интерфейс для обработки событий от AudioTask
  */
 
-#ifndef UI_INTERFACES_IAUDIO_EVENT_HANDLER_H
-#define UI_INTERFACES_IAUDIO_EVENT_HANDLER_H
+#pragma once
 
 #include "messages/audio_to_ui_messages.h"
 
@@ -31,4 +30,3 @@ public:
     }
 };
 
-#endif // UI_INTERFACES_IAUDIO_EVENT_HANDLER_H

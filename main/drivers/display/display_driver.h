@@ -1,5 +1,4 @@
-#ifndef DISPLAY_DRIVER_H
-#define DISPLAY_DRIVER_H
+#pragma once
 
 #include "lvgl.h"
 
@@ -46,4 +45,3 @@ void display_wake(void);
  */
 bool display_is_asleep(void);
 
-#endif // DISPLAY_DRIVER_H

@@ -11,8 +11,7 @@
  * Эта очередь читается UI задачей, а ScreenManager рассылает события всем экранам.
  */
 
-#ifndef AUDIO_TO_UI_MESSAGES_H
-#define AUDIO_TO_UI_MESSAGES_H
+#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -132,4 +131,3 @@ struct AudioToUIMessage {
 // Глобальная очередь (объявляется в main.cpp, используется в audio_task и ui_task)
 extern QueueHandle_t audioToUIQueue;
 
-#endif // AUDIO_TO_UI_MESSAGES_H

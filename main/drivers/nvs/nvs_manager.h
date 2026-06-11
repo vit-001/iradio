@@ -1,5 +1,4 @@
-#ifndef NVS_MANAGER_H
-#define NVS_MANAGER_H
+#pragma once
 
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -64,4 +63,3 @@ private:
     void loadAllFromNVS();
 };
 
-#endif // NVS_MANAGER_H

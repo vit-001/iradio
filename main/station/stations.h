@@ -3,8 +3,7 @@
  * @brief Класс для управления списком радиостанций
  */
 
-#ifndef STATIONS_H
-#define STATIONS_H
+#pragma once
 
 #include <cstring>
 
@@ -122,4 +121,3 @@ private:
     StationsManager& operator=(const StationsManager&) = delete;
 };
 
-#endif // STATIONS_H
