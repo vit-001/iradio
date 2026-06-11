@@ -246,5 +246,11 @@ private:
 
     // Время начала подключения/переподключения
     uint32_t _connectStartTime = 0;
+    // Последняя попытка переподключения Wi-Fi
+    uint32_t _lastWiFiReconnect = 0;
+    // Время начала переподключения потока
+    uint32_t _reconnectStartTime  = 0;
+    // Флаг, что поток остановлен
+    bool _streamStopped = false;
 
 };

@@ -7,6 +7,7 @@ static const char* TAG = "AUDIO_MGR";
 
 extern QueueHandle_t audioToUIQueue;
 
+
 // -----------------------------------------------------------------------------
 // Конструктор и деструктор
 // -----------------------------------------------------------------------------
@@ -100,11 +101,11 @@ void AudioManager::loop() {
             sendWiFiEvent();
         }
 
-        // Если Wi-Fi пропал — инициируем переподключение
-        if (!connected && (currentState == PlaybackState::Playing || currentState == PlaybackState::Reconnecting))  {
-            ESP_LOGW(TAG, "Wi-Fi lost, reconnecting...");
-            WiFi.reconnect();
-        }
+        // // Если Wi-Fi пропал — инициируем переподключение
+        // if (!connected && (currentState == PlaybackState::Playing || currentState == PlaybackState::Reconnecting))  {
+        //     ESP_LOGW(TAG, "Wi-Fi lost, reconnecting...");
+        //     WiFi.reconnect();
+        // }
     }
 
     // -------------------------------------------------------------------------
@@ -121,9 +122,11 @@ void AudioManager::loop() {
             // Если буфер опустел — переходим в Reconnecting
             if (filled == 0) {
                 ESP_LOGW(TAG, "Buffer empty, starting reconnect...");
-                setState(PlaybackState::Reconnecting);
 
-                // Авто-переподключение убрано, теперь централизованно в processReconnecting
+                _streamStopped = false;
+                _reconnectStartTime = 0;
+
+                setState(PlaybackState::Reconnecting);
             }
         }
     }
@@ -163,6 +166,10 @@ void AudioManager::loop() {
                         filled);
 
                 _reconnectingLoopCount = 0;
+
+                _streamStopped = false;
+                _reconnectStartTime = 0;
+
                 setState(PlaybackState::Reconnecting);
             }
 
@@ -178,12 +185,23 @@ void AudioManager::loop() {
             break;
 
         case PlaybackState::Reconnecting:
-            ESP_LOGW(TAG, "Stopping stream before reconnect");
-            _audio.stopSong();
 
-            vTaskDelay(pdMS_TO_TICKS(500));
+            // Остановить поток только один раз
+            if (!_streamStopped) {
 
-            processReconnecting();
+                ESP_LOGW(TAG, "Stopping stream before reconnect");
+
+                _audio.stopSong();
+
+                _streamStopped = true;
+                _reconnectStartTime = millis();
+            }
+
+            // Подождать 500 мс после stopSong()
+            if (millis() - _reconnectStartTime > 500) {
+                processReconnecting();
+            }
+
             break;
 
         default:
@@ -204,18 +222,30 @@ void AudioManager::processReconnecting() {
 
 
     // Если нет Wi-Fi — пробуем восстановить соединение
-    if (!_wifiConnected) {
-        ESP_LOGI(TAG,"Trying to reconnect WiFi...");
-        WiFi.reconnect();
+    if (WiFi.status() != WL_CONNECTED) {
+
+        if (millis() - _lastWiFiReconnect > 5000) {
+            _lastWiFiReconnect = millis();
+
+            ESP_LOGW(TAG, "WiFi disconnected, trying reconnect...");
+            WiFi.reconnect();
+        }
+
         return;
     }
 
     // Если Wi-Fi есть и URL известен — переподключаемся к станции
     if (_currentUrl[0] != '\0') {
+
         ESP_LOGI(TAG, "Reconnecting stream: %s", _currentUrl);
 
         _connectStartTime = millis();
+
+        _streamStopped = false;
+        _reconnectingLoopCount = 0;
+
         _audio.connecttohost(_currentUrl);
+
         setState(PlaybackState::Connecting);
     }
 }

@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+
 // WiFi настройки (объявления)
 extern const char* ssid;
 extern const char* password;
@@ -46,6 +47,12 @@ extern const char* radio_url;
 
 // Настройки дисплея
 #define DISPLAY_SLEEP_TIMEOUT_MS    000000   // таймаут гашения дисплея в мс (0 - не отключать)
+
+// -----------------------------------------------------------------------------
+// Encoder settings
+// -----------------------------------------------------------------------------
+constexpr unsigned long ENCODER_LONG_PRESS_TIME   = 800;
+constexpr unsigned long ENCODER_DOUBLE_CLICK_TIME = 300;
 
 // Настройки тембра
 #define TONE_BASS   3

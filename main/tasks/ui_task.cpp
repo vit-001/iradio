@@ -85,84 +85,52 @@ static void initScreens(ScreenManager& mgr) {
 }
 
 /**
- * @brief Callback для событий энкодера
- * @param event тип события
- * @param userData пользовательские данные (не используются)
+ * @brief Callback для событий всех энкодеров
  */
-static void onEncoderEvent(EncoderEvent event, void* userData) {
+static void onEncoderEvent(const EncoderEvent& event)
+{
     ScreenManager& mgr = ScreenManager::getInstance();
 
-    // Сбрасываем таймер при любом действии пользователя
+    // Сбрасываем таймер бездействия
     s_lastActivity = millis();
-    
-    // Если дисплей в режиме сна — будим
-    if (!s_displayAwake) {
+
+    // Будим дисплей
+    if (!s_displayAwake)
+    {
         display_wake();
         s_displayAwake = true;
+
         // Перерисовываем текущий экран
         mgr.updateCurrent();
     }
-    
-    switch (event) {
-        case ENCODER_TURN_RIGHT:
-            mgr.onTurnRight(1);
+
+    switch (event.type)
+    {
+        case EncoderEventType::TurnRight:
+            mgr.onTurnRight(event.encoderId);
             break;
-        case ENCODER_TURN_LEFT:
-            mgr.onTurnLeft(1);
+
+        case EncoderEventType::TurnLeft:
+            mgr.onTurnLeft(event.encoderId);
             break;
-        case ENCODER_BUTTON_SHORT:
-            mgr.onShortPress(1);
+
+        case EncoderEventType::ButtonShort:
+            mgr.onShortPress(event.encoderId);
             break;
-        case ENCODER_BUTTON_LONG:
-            mgr.onLongPress(1);
+
+        case EncoderEventType::ButtonLong:
+            mgr.onLongPress(event.encoderId);
             break;
-        case ENCODER_BUTTON_DOUBLE:
-            mgr.onDoublePress(1);
+
+        case EncoderEventType::ButtonDouble:
+            mgr.onDoublePress(event.encoderId);
             break;
+
         default:
             break;
     }
 }
 
-/**
- * @brief Callback для событий энкодера №2
- * @param event тип события
- * @param userData пользовательские данные (не используются)
- */
-static void onEncoder2Event(EncoderEvent event, void* userData) {
-    ScreenManager& mgr = ScreenManager::getInstance();
-
-    // Сбрасываем таймер при любом действии пользователя
-    s_lastActivity = millis();
-    
-    // Если дисплей в режиме сна — будим
-    if (!s_displayAwake) {
-        display_wake();
-        s_displayAwake = true;
-        // Перерисовываем текущий экран
-        mgr.updateCurrent();
-    }
-    
-    switch (event) {
-        case ENCODER_TURN_RIGHT:
-            mgr.onTurnRight(2);
-            break;
-        case ENCODER_TURN_LEFT:
-            mgr.onTurnLeft(2);
-            break;
-        case ENCODER_BUTTON_SHORT:
-            mgr.onShortPress(2);
-            break;
-        case ENCODER_BUTTON_LONG:
-            mgr.onLongPress(2);
-            break;
-        case ENCODER_BUTTON_DOUBLE:
-            mgr.onDoublePress(2);
-            break;
-        default:
-            break;
-    }
-}
 
 /**
  * @brief Главная функция задачи UI
@@ -183,19 +151,13 @@ void uiTaskFunction(void* parameter) {
     // Показываем первый экран (VolumeScreen)
     mgr.switchTo(0);
     
-    // ==================== Инициализация энкодера ====================
-    s_encoder = new Encoder(ENC_A, ENC_B, ENC_BTN);
-    s_encoder->begin();
+
+    // ==================== Инициализация энкодеров ====================
+    s_encoder = new Encoder(1, ENC_A, ENC_B, ENC_BTN);
     s_encoder->setCallback(onEncoderEvent);
-    s_encoder->setLongPressTime(800);      // 800 мс для долгого нажатия
-    s_encoder->setDoubleClickTime(300);    // 300 мс между нажатиями для двойного
-  
-    // ==================== Инициализация энкодера 2====================
-    s_encoder_2 = new Encoder(ENC_2_A, ENC_2_B, ENC_2_BTN);
-    s_encoder_2->begin();
-    s_encoder_2->setCallback(onEncoder2Event);
-    s_encoder_2->setLongPressTime(800);      // 800 мс для долгого нажатия
-    s_encoder_2->setDoubleClickTime(300);    // 300 мс между нажатиями для двойного    
+
+    s_encoder_2 = new Encoder(2, ENC_2_A, ENC_2_B, ENC_2_BTN);
+    s_encoder_2->setCallback(onEncoderEvent);
 
     s_lastActivity = millis();
     s_displayAwake = true;

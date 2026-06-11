@@ -1,131 +1,172 @@
+// encoder.cpp
+
 #include "encoder.h"
-#include "esp_log.h"
+#include "config.h"
 
-static const char* TAG = "ENCODER";
+#include <Arduino.h>
 
-Encoder::Encoder(int pinA, int pinB, int pinBtn)
-    : _pinA(pinA), _pinB(pinB), _pinBtn(pinBtn)
-    , _lastA(HIGH), _lastB(HIGH), _position(0), _lastEvent(ENCODER_IDLE)
-    , _callback(nullptr), _callbackData(nullptr)
-    , _lastTurnTime(0), _lastButtonTime(0), _buttonPressStartTime(0)
-    , _buttonPressCount(0), _buttonProcessed(false)
-    , _longPressTime(1000), _doubleClickTime(300) {
+namespace {
+
+// Таблица переходов квадратурного энкодера
+constexpr int8_t ENC_STATES[16] = {
+     0, -1,  1,  0,
+     1,  0,  0, -1,
+    -1,  0,  0,  1,
+     0,  1, -1,  0
+};
+
 }
 
-void Encoder::begin() {
+// -----------------------------------------------------------------------------
+// Конструктор
+// -----------------------------------------------------------------------------
+Encoder::Encoder(
+    int id,
+    int pinA,
+    int pinB,
+    int pinBtn,
+    bool reverse)
+    : _id(id)
+    , _pinA(pinA)
+    , _pinB(pinB)
+    , _pinBtn(pinBtn)
+    , _reverse(reverse)
+{
     pinMode(_pinA, INPUT_PULLUP);
     pinMode(_pinB, INPUT_PULLUP);
     pinMode(_pinBtn, INPUT_PULLUP);
-    _lastA = digitalRead(_pinA);
-    _lastB = digitalRead(_pinB);
-    ESP_LOGI(TAG, "Initialized on pins A=%d, B=%d, BTN=%d", _pinA, _pinB, _pinBtn);
+
+    uint8_t a = digitalRead(_pinA);
+    uint8_t b = digitalRead(_pinB);
+
+    _oldAB = (a << 1) | b;
 }
 
-void Encoder::update() {
-    handleTurn();
+// -----------------------------------------------------------------------------
+// Установка callback
+// -----------------------------------------------------------------------------
+void Encoder::setCallback(EncoderCallback callback)
+{
+    _callback = callback;
+}
+
+// -----------------------------------------------------------------------------
+// Основной цикл
+// -----------------------------------------------------------------------------
+void Encoder::update()
+{
+    handleRotation();
     handleButton();
 }
 
-void Encoder::setCallback(EncoderCallback callback, void* userData) {
-    _callback = callback;
-    _callbackData = userData;
-}
+// -----------------------------------------------------------------------------
+// Обработка вращения
+// -----------------------------------------------------------------------------
+void Encoder::handleRotation()
+{
+    uint8_t a = digitalRead(_pinA);
+    uint8_t b = digitalRead(_pinB);
 
-EncoderEvent Encoder::getLastEvent() {
-    EncoderEvent event = _lastEvent;
-    _lastEvent = ENCODER_IDLE;
-    return event;
-}
+    uint8_t newAB = (a << 1) | b;
 
-void Encoder::setLongPressTime(unsigned long ms) {
-    _longPressTime = ms;
-}
+    uint8_t index = (_oldAB << 2) | newAB;
 
-void Encoder::setDoubleClickTime(unsigned long ms) {
-    _doubleClickTime = ms;
-}
+    _delta += ENC_STATES[index];
 
-int Encoder::getPosition() {
-    return _position;
-}
+    _oldAB = newAB;
 
-void Encoder::resetPosition() {
-    _position = 0;
-}
+    // Один щелчок энкодера = 4 перехода
+    if (_delta >= 4)
+    {
+        _delta = 0;
 
-bool Encoder::isButtonPressed() {
-    return digitalRead(_pinBtn) == LOW;
-}
-
-void Encoder::handleTurn() {
-    int a = digitalRead(_pinA);
-    int b = digitalRead(_pinB);
-    
-    if (a != _lastA && a == LOW && (millis() - _lastTurnTime) > 5) {
-        _lastTurnTime = millis();
-        if (b == HIGH) {
-            _position--;
-            _lastEvent = ENCODER_TURN_LEFT;
-            ESP_LOGD(TAG, "Turn LEFT, position=%d", _position);
-        } else {
-            _position++;
-            _lastEvent = ENCODER_TURN_RIGHT;
-            ESP_LOGD(TAG, "Turn RIGHT, position=%d", _position);
-        }
-        if (_callback) {
-            _callback(_lastEvent, _callbackData);
-        }
+        if (_reverse)
+            emitEvent(EncoderEventType::TurnLeft);
+        else
+            emitEvent(EncoderEventType::TurnRight);
     }
-    _lastA = a;
-    _lastB = b;
+    else if (_delta <= -4)
+    {
+        _delta = 0;
+
+        if (_reverse)
+            emitEvent(EncoderEventType::TurnRight);
+        else
+            emitEvent(EncoderEventType::TurnLeft);
+    }
 }
 
-void Encoder::handleButton() {
+// -----------------------------------------------------------------------------
+// Обработка кнопки
+// -----------------------------------------------------------------------------
+void Encoder::handleButton()
+{
     bool pressed = (digitalRead(_pinBtn) == LOW);
-    unsigned long now = millis();
-    
-    if (pressed && !_buttonProcessed) {
-        if (_buttonPressStartTime == 0) {
-            _buttonPressStartTime = now;
-        }
-        if (!_buttonProcessed && (now - _buttonPressStartTime) > _longPressTime) {
-            _buttonProcessed = true;
-            _lastEvent = ENCODER_BUTTON_LONG;
-            ESP_LOGI(TAG, "Button LONG press");
-            if (_callback) {
-                _callback(ENCODER_BUTTON_LONG, _callbackData);
-            }
+
+    uint32_t now = millis();
+
+    // Нажатие
+    if (pressed && !_buttonPressed)
+    {
+        _buttonPressed = true;
+        _longPressSent = false;
+        _pressStartTime = now;
+    }
+
+    // Удержание
+    if (pressed && !_longPressSent)
+    {
+        if ((now - _pressStartTime) >= ENCODER_LONG_PRESS_TIME)
+        {
+            _longPressSent = true;
+            emitEvent(EncoderEventType::ButtonLong);
         }
     }
-    
-    if (!pressed && _buttonPressStartTime > 0) {
-        unsigned long pressDuration = now - _buttonPressStartTime;
-        
-        if (!_buttonProcessed && pressDuration < _longPressTime) {
-            _buttonPressCount++;
-            _lastButtonTime = now;
-        }
-        
-        _buttonPressStartTime = 0;
-        _buttonProcessed = false;
-        
-        static unsigned long lastPressEnd = 0;
-        if (now - lastPressEnd > _doubleClickTime) {
-            if (_buttonPressCount == 1) {
-                _lastEvent = ENCODER_BUTTON_SHORT;
-                ESP_LOGI(TAG, "Button SHORT press");
-                if (_callback) {
-                    _callback(ENCODER_BUTTON_SHORT, _callbackData);
-                }
-            } else if (_buttonPressCount >= 2) {
-                _lastEvent = ENCODER_BUTTON_DOUBLE;
-                ESP_LOGI(TAG, "Button DOUBLE press");
-                if (_callback) {
-                    _callback(ENCODER_BUTTON_DOUBLE, _callbackData);
-                }
+
+    // Отпускание
+    if (!pressed && _buttonPressed)
+    {
+        _buttonPressed = false;
+
+        // После long ничего больше не генерируем
+        if (_longPressSent)
+            return;
+
+        _clickCount++;
+        _lastReleaseTime = now;
+    }
+
+    // Ожидание второго клика закончилось
+    if (_clickCount > 0)
+    {
+        if ((now - _lastReleaseTime) >= ENCODER_DOUBLE_CLICK_TIME)
+        {
+            if (_clickCount == 1)
+            {
+                emitEvent(EncoderEventType::ButtonShort);
             }
-            _buttonPressCount = 0;
+            else
+            {
+                emitEvent(EncoderEventType::ButtonDouble);
+            }
+
+            _clickCount = 0;
         }
-        lastPressEnd = now;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Отправка события
+// -----------------------------------------------------------------------------
+void Encoder::emitEvent(EncoderEventType type)
+{
+    if (_callback)
+    {
+        EncoderEvent event;
+
+        event.encoderId = _id;
+        event.type = type;
+
+        _callback(event);
     }
 }
