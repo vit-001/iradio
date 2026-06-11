@@ -104,31 +104,8 @@ static void onEncoderEvent(const EncoderEvent& event)
         mgr.updateCurrent();
     }
 
-    switch (event.type)
-    {
-        case EncoderEventType::TurnRight:
-            mgr.onTurnRight(event.encoderId);
-            break;
-
-        case EncoderEventType::TurnLeft:
-            mgr.onTurnLeft(event.encoderId);
-            break;
-
-        case EncoderEventType::ButtonShort:
-            mgr.onShortPress(event.encoderId);
-            break;
-
-        case EncoderEventType::ButtonLong:
-            mgr.onLongPress(event.encoderId);
-            break;
-
-        case EncoderEventType::ButtonDouble:
-            mgr.onDoublePress(event.encoderId);
-            break;
-
-        default:
-            break;
-    }
+    // Передаём событие дальше
+    mgr.handleEncoderEvent(event);
 }
 
 
@@ -153,10 +130,10 @@ void uiTaskFunction(void* parameter) {
     
 
     // ==================== Инициализация энкодеров ====================
-    s_encoder = new Encoder(1, ENC_A, ENC_B, ENC_BTN);
+    s_encoder = new Encoder(1, ENC_A, ENC_B, ENC_BTN, ENC_1_INVERT);
     s_encoder->setCallback(onEncoderEvent);
 
-    s_encoder_2 = new Encoder(2, ENC_2_A, ENC_2_B, ENC_2_BTN);
+    s_encoder_2 = new Encoder(2, ENC_2_A, ENC_2_B, ENC_2_BTN, ENC_2_INVERT);
     s_encoder_2->setCallback(onEncoderEvent);
 
     s_lastActivity = millis();

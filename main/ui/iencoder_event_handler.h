@@ -1,56 +1,31 @@
+
 /**
  * @file iencoder_event_handler.h
  * @brief Интерфейс для обработки событий энкодера
  */
 
-#ifndef UI_INTERFACES_IENCODER_EVENT_HANDLER_H
-#define UI_INTERFACES_IENCODER_EVENT_HANDLER_H
+#pragma once
+
+#include "drivers/encoder/encoder.h"
 
 /**
  * @class IEncoderEventHandler
  * @brief Интерфейс для обработки событий энкодера
- * 
+ *
  * Реализуйте этот интерфейс в классах, которые должны реагировать
- * на действия пользователя через энкодер (статус-бары, виджеты, экраны)
+ * на действия пользователя через энкодеры.
  */
 class IEncoderEventHandler {
 public:
     virtual ~IEncoderEventHandler() = default;
-    
+
     /**
-     * @brief Поворот энкодера вправо
+     * @brief Обработка события энкодера
+     *
+     * @param event Событие энкодера
      */
-    virtual void onTurnRight(int enc_no) {
-        // По умолчанию без реакции
-    }
-    
-    /**
-     * @brief Поворот энкодера влево
-     */
-    virtual void onTurnLeft(int enc_no) {
-        // По умолчанию без реакции
-    }
-    
-    /**
-     * @brief Короткое нажатие
-     */
-    virtual void onShortPress(int enc_no) {
-        // По умолчанию без реакции
-    }
-    
-    /**
-     * @brief Долгое нажатие (обычно 800+ мс)
-     */
-    virtual void onLongPress(int enc_no) {
-        // По умолчанию без реакции
-    }
-    
-    /**
-     * @brief Двойное нажатие
-     */
-    virtual void onDoublePress(int enc_no) {
+    virtual void handleEncoderEvent(const EncoderEvent& event) {
         // По умолчанию без реакции
     }
 };
 
-#endif // UI_INTERFACES_IENCODER_EVENT_HANDLER_H

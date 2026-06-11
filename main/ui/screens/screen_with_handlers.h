@@ -24,11 +24,20 @@ public:
         : Screen(manager, parent) {}
     
     virtual ~ScreenWithHandlers() = default;
-
-    void onLongPress(int enc_no) override;
-    void onDoublePress(int enc_no) override; 
     
     // Все методы из интерфейсов уже есть, но могут быть переопределены
+
+    /**
+     * @brief Обработка событий энкодера по умолчанию
+     *
+     * Длинное нажатие → следующий экран.
+     * Двойное нажатие → предыдущий экран.
+     *
+     * Остальные события игнорируются и могут быть
+     * переопределены в наследниках.
+     */
+    void handleEncoderEvent(const EncoderEvent& event) override;
+
 };
 
 #endif // UI_SCREENS_SCREEN_WITH_HANDLERS_H

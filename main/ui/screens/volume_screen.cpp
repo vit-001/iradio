@@ -124,31 +124,40 @@ void VolumeScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void VolumeScreen::onTurnRight(int enc_no) { // Увеличиваем громкость
-    // Отправляем команду в AudioTask (через очередь)
+void VolumeScreen::handleEncoderEvent(const EncoderEvent& event)
+{
     AudioMessage msg;
-    msg.type = CMD_VOLUME_UP;
-    xQueueSend(audioQueue, &msg, portMAX_DELAY);
-    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_VOLUME_UP");
-    // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
-}
 
-void VolumeScreen::onTurnLeft(int enc_no) {  // Уменьшаем громкость
-    // Отправляем команду в AudioTask (через очередь)
-    AudioMessage msg;
-    msg.type = CMD_VOLUME_DOWN;
-    xQueueSend(audioQueue, &msg, portMAX_DELAY);
-    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_VOLUME_DOWN");
-    // UI обновится через EVENT_VOLUME_CHANGED от AudioTask
-}
+    // Обработка по умолчанию
+    ScreenWithHandlers::handleEncoderEvent(event);
 
-void VolumeScreen::onShortPress(int enc_no) { // Play/Pause
-    // Отправляем команду в AudioTask (через очередь)
-    AudioMessage msg;
-    msg.type = CMD_PLAY_PAUSE;
-    xQueueSend(audioQueue, &msg, portMAX_DELAY);
-    ESP_LOGI(TAG, "Command sent to AudioTask: CMD_PLAY_PAUSE");
-    // UI обновится через EVENT_PLAYBACK_INFO от AudioTask
+    // пока этот экран использует только энкодер №1
+    if (event.encoderId != 1)
+        return;
+
+    switch (event.type)
+    {
+        case EncoderEventType::TurnRight:
+            msg.type = CMD_VOLUME_UP;
+            xQueueSend(audioQueue, &msg, portMAX_DELAY);
+            ESP_LOGI(TAG, "Command sent to AudioTask: CMD_VOLUME_UP");
+            break;
+
+        case EncoderEventType::TurnLeft:
+            msg.type = CMD_VOLUME_DOWN;
+            xQueueSend(audioQueue, &msg, portMAX_DELAY);
+            ESP_LOGI(TAG, "Command sent to AudioTask: CMD_VOLUME_DOWN");
+            break;
+
+        case EncoderEventType::ButtonShort:
+            msg.type = CMD_PLAY_PAUSE;
+            xQueueSend(audioQueue, &msg, portMAX_DELAY);
+            ESP_LOGI(TAG, "Command sent to AudioTask: CMD_PLAY_PAUSE");
+            break;
+
+        default:
+            break;
+    }
 }
 
 void VolumeScreen::refresh() {

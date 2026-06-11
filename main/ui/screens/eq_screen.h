@@ -1,158 +1,135 @@
 /**
  * @file eq_screen.h
  * @brief Экран эквалайзера
- * 
+ *
  * Позволяет регулировать три полосы эквалайзера:
- * - BASS (низкие частоты)
- * - MID (средние частоты)
- * - TREBLE (высокие частоты)
- * 
+ * - BASS
+ * - MID
+ * - TREBLE
+ *
  * Управление:
  * - Поворот энкодера → изменение значения текущей полосы
- * - Короткое нажатие → переключение между полосами (BASS → MID → TREBLE → BASS)
- * - Долгое/двойное нажатие → переключение на следующий экран (унаследовано от Screen)
- * 
- * Диапазон значений: от -40 до +6 децибел.
- * Шаг изменения: 1 dB.
+ * - Короткое нажатие → переключение полосы
+ *
+ * Долгое и двойное нажатия обрабатываются базовым классом.
  */
 
-#ifndef UI_SCREENS_EQ_SCREEN_H
-#define UI_SCREENS_EQ_SCREEN_H
+#pragma once
 
 #include "screen_with_handlers.h"
 
 /**
  * @class EQScreen
- * @brief Экран для настройки эквалайзера
+ * @brief Экран настройки эквалайзера
  */
-class EQScreen : public ScreenWithHandlers {
+class EQScreen : public ScreenWithHandlers
+{
 public:
     /**
      * @brief Конструктор
      * @param manager указатель на менеджер экранов
-     * @param parent указатель на контейнер, в котором будет размещён экран
+     * @param parent контейнер LVGL
      */
     explicit EQScreen(ScreenManager* manager, lv_obj_t* parent);
-    
+
     virtual ~EQScreen() = default;
-    
+
     // ==================== Жизненный цикл ====================
-    
+
     /**
-     * @brief Создание LVGL экрана и всех виджетов
-     * @return указатель на LVGL объект экрана
+     * @brief Создание LVGL объектов
      */
     lv_obj_t* create() override;
-    
-    // ==================== События от AudioTask ====================
-    
+
     /**
-     * @brief Обработка событий от AudioTask
-     * @param msg сообщение из очереди audioToUIQueue
-     * 
-     * Реагирует на:
-     * - EVENT_EQ_VALUES: обновление значений эквалайзера
+     * @brief Обновление экрана
+     */
+    void refresh() override;
+
+    // ==================== События AudioTask ====================
+
+    /**
+     * @brief Обработка сообщений от AudioTask
      */
     void handleAudioEvent(const AudioToUIMessage& msg) override;
-    
-    // ==================== События энкодера ====================
-    
+
+    // ==================== События энкодеров ====================
+
     /**
-     * @brief Поворот вправо → увеличить значение текущей полосы
+     * @brief Обработка событий энкодеров
      */
-    void onTurnRight(int enc_no) override;
-    
-    /**
-     * @brief Поворот влево → уменьшить значение текущей полосы
-     */
-    void onTurnLeft(int enc_no) override;
-    
-    /**
-     * @brief Короткое нажатие → переключить полосу
-     */
-    void onShortPress(int enc_no) override;
-    
-    // onLongPress и onDoublePress оставляем по умолчанию (переключение экрана)
-    
-    virtual void refresh() override;
+    void handleEncoderEvent(const EncoderEvent& event) override;
 
 private:
+
     // ==================== Типы и константы ====================
-    
-    /**
-     * @enum Band
-     * @brief Полосы эквалайзера
-     */
-    enum Band : uint8_t {
-        BASS = 0,      ///< Низкие частоты
-        MID,           ///< Средние частоты
-        TREBLE,        ///< Высокие частоты
-        BAND_COUNT     ///< Количество полос
+
+    enum Band : uint8_t
+    {
+        BASS = 0,
+        MID,
+        TREBLE,
+        BAND_COUNT
     };
-    
-    static const char* BAND_NAMES[BAND_COUNT];   ///< Названия полос
-    static const int MIN_VALUE = -40;              ///< Минимальное значение (dB)
-    static const int MAX_VALUE = 6;               ///< Максимальное значение (dB)
-    
+
+    static const char* BAND_NAMES[BAND_COUNT];
+
+    static constexpr int MIN_VALUE = -40;
+    static constexpr int MAX_VALUE = 6;
+
     // ==================== Вспомогательные методы ====================
-    
+
     /**
-     * @brief Обновить отображение текущей полосы и её значения
+     * @brief Обновить отображение
      */
     void updateDisplay();
-    
+
     /**
      * @brief Получить значение текущей полосы
-     * @return текущее значение в dB
      */
     int getCurrentBandValue() const;
-    
+
     /**
      * @brief Установить значение текущей полосы
-     * @param value новое значение
      */
     void setCurrentBandValue(int value);
-    
+
     /**
-     * @brief Отправить текущие значения эквалайзера в AudioTask
+     * @brief Отправить настройки в AudioTask
      */
     void sendEQToAudio();
-    
+
     /**
-     * @brief Сохранить текущие значения в NVS
+     * @brief Сохранить настройки в NVS
      */
     void saveToNVS();
-    
+
     /**
-     * @brief Преобразовать значение dB в процент для прогресс-бара
-     * @param value значение в dB (-40..+6)
-     * @return процент (0-100)
+     * @brief Преобразование dB в проценты для progress bar
      */
     int valueToPercent(int value) const;
-    
+
     /**
-     * @brief Получить цвет для значения
-     * @param value значение в dB
-     * @return цвет в формате RGB565
+     * @brief Получить цвет значения
      */
     uint32_t getValueColor(int value) const;
-    
-    // ==================== Данные экрана ====================
-    
-    Band m_currentBand = BASS;    ///< Текущая выбранная полоса
-    int m_bass = 0;               ///< Значение басов
-    int m_mid = 0;                ///< Значение средних
-    int m_treble = 0;             ///< Значение высоких
-    
-    // ==================== LVGL виджеты ====================
-    
-    lv_obj_t* m_modeLabel = nullptr;      ///< Индикатор "EQ" (голубой)
-    lv_obj_t* m_bandLabel = nullptr;      ///< Название текущей полосы (BASS/MID/TREBLE)
-    lv_obj_t* m_valueLabel = nullptr;     ///< Текущее значение (например "+3 dB")
-    lv_obj_t* m_bar = nullptr;            ///< Прогресс-бар для визуализации
-    lv_obj_t* m_minLabel = nullptr;       ///< Метка минимального значения "-40"
-    lv_obj_t* m_maxLabel = nullptr;       ///< Метка максимального значения "+6"
-    lv_obj_t* m_zeroLabel = nullptr;      ///< Метка нуля "0"
-};
 
-#endif // UI_SCREENS_EQ_SCREEN_H
+    // ==================== Данные ====================
+
+    Band m_currentBand = BASS;
+
+    int m_bass = 0;
+    int m_mid = 0;
+    int m_treble = 0;
+
+    // ==================== LVGL объекты ====================
+
+    lv_obj_t* m_modeLabel = nullptr;   ///< "EQ"
+    lv_obj_t* m_bandLabel = nullptr;   ///< BASS/MID/TREBLE
+    lv_obj_t* m_valueLabel = nullptr;  ///< "+3 dB"
+    lv_obj_t* m_bar = nullptr;
+
+    lv_obj_t* m_minLabel = nullptr;
+    lv_obj_t* m_maxLabel = nullptr;
+    lv_obj_t* m_zeroLabel = nullptr;
+};

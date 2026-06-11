@@ -1,184 +1,142 @@
 /**
  * @file screen_manager.h
  * @brief Менеджер экранов
- * 
+ *
  * Управляет списком экранов и переключением между ними.
- * Делегирует события энкодера текущему экрану.
- * Рассылает события от AudioTask всем экранам.
- * 
- * Менеджер не знает ничего о внутреннем устройстве экранов —
- * он только вызывает их методы и переключает видимость LVGL объектов.
+ * Рассылает события энкодера текущему экрану.
+ * Рассылает события AudioTask всем экранам.
  */
 
-#ifndef UI_SCREEN_MANAGER_H
-#define UI_SCREEN_MANAGER_H
+#pragma once
+
+#include <vector>
 
 #include "messages/audio_to_ui_messages.h"
+#include "drivers/encoder/encoder.h"
 #include "screens/screen_with_handlers.h"
 #include "ui/status_bars/top_bar.h"
 #include "ui/status_bars/bottom_bar.h"
-#include <vector>
 
 /**
  * @class ScreenManager
  * @brief Синглтон для управления экранами
- * 
- * Использование:
- * 1. Получить экземпляр: ScreenManager::getInstance()
- * 2. Добавить экраны: addScreen(new VolumeScreen(&mgr))
- * 3. Создать LVGL объекты: каждый экран->create()
- * 4. Запустить: switchTo(0)
- * 5. В цикле UI вызывать updateCurrent() и обрабатывать события энкодера
  */
-class ScreenManager {
+class ScreenManager
+{
 public:
     /**
-     * @brief Получить единственный экземпляр менеджера
-     * @return ссылка на экземпляр ScreenManager
+     * @brief Получить экземпляр менеджера
      */
     static ScreenManager& getInstance();
-    
+
     // ==================== Управление экранами ====================
-    
+
     /**
-     * @brief Добавить экран в конец списка
-     * @param screen указатель на экран (менеджер не владеет памятью, не удаляет)
-     * 
-     * @note Экраны добавляются в порядке, соответствующем циклическому переключению.
-     *       Первый добавленный экран будет показан при switchTo(0).
+     * @brief Добавить экран
      */
     void addScreen(ScreenWithHandlers* screen);
-    
+
     /**
-     * @brief Переключиться на следующий экран (по кругу)
-     * 
-     * Вызывается по долгому или двойному нажатию по умолчанию.
+     * @brief Следующий экран
      */
     void next();
 
     /**
-     * @brief установить указатель на верхнюю панель
-     * @param topBar указатель на верхнюю панель
-     */
-    void setTopBar(TopBar* topBar) { m_topBar = topBar; }
-
-    
-    /**
-     * @brief установить указатель на нижнюю панель
-     * @param bottomBar указатель на нижнюю панель
-     */
-    void setBottomBar(BottomBar* bottomBar) { m_bottomBar = bottomBar; }    
-    
-    /**
-     * @brief Переключиться на предыдущий экран (по кругу)
+     * @brief Предыдущий экран
      */
     void previous();
-    
+
     /**
-     * @brief Переключиться на экран с указанным индексом
-     * @param index индекс экрана (0..count-1)
-     * 
-     * @note Автоматически скрывает текущий экран, показывает новый,
-     *       вызывает onShow/onHide и обновляет LVGL.
+     * @brief Переключение на экран по индексу
      */
     void switchTo(int index);
-    
+
     /**
      * @brief Получить текущий экран
-     * @return указатель на текущий экран, или nullptr если нет экранов
      */
     ScreenWithHandlers* getCurrentScreen() const;
-    
-    /**
-     * @brief Получить индекс текущего экрана
-     * @return индекс, или -1 если нет экранов
-     */
-    int getCurrentIndex() const { return m_currentIndex; }
-    
-    /**
-     * @brief Получить количество экранов
-     */
-    int getScreenCount() const { return m_screens.size(); }
 
     /**
-     * @brief Получить указатель на верхнюю панель
-     * @return указатель на верхнюю панель, или nullptr если нет экранов
+     * @brief Индекс текущего экрана
      */
-    TopBar* getTopBar() const { return m_topBar; }
+    int getCurrentIndex() const
+    {
+        return m_currentIndex;
+    }
 
-        /**
-     * @brief Получить указатель на нижнюю панель
-     * @return указатель на нижнюю панель, или nullptr если нет экранов
-     */
-    BottomBar* getBottomBar() const { return m_bottomBar; }
-
-    // ==================== События от AudioTask ====================
-    
     /**
-     * @brief Обработка события от AudioTask
-     * @param msg сообщение из очереди audioToUIQueue
-     * 
-     * Рассылает событие ВСЕМ экранам (включая неактивные).
-     * Это позволяет всем экранам всегда иметь актуальные данные,
-     * даже если они не отображаются в данный момент.
-     * 
-     * @note Неактивные экраны обновляют свои данные, но остаются скрытыми.
+     * @brief Количество экранов
+     */
+    int getScreenCount() const
+    {
+        return m_screens.size();
+    }
+
+    // ==================== Панели ====================
+
+    void setTopBar(TopBar* topBar)
+    {
+        m_topBar = topBar;
+    }
+
+    void setBottomBar(BottomBar* bottomBar)
+    {
+        m_bottomBar = bottomBar;
+    }
+
+    TopBar* getTopBar() const
+    {
+        return m_topBar;
+    }
+
+    BottomBar* getBottomBar() const
+    {
+        return m_bottomBar;
+    }
+
+    // ==================== Audio события ====================
+
+    /**
+     * @brief Рассылка события AudioTask всем экранам
      */
     void handleAudioEvent(const AudioToUIMessage& msg);
-    
+
     /**
      * @brief Обновить текущий экран
-     * 
-     * Вызывается в цикле UI задачи.
-     * Нужно только для экранов, которые требуют постоянного обновления
-     * (например, анимации, визуализация спектра).
-     * 
-     * @note Обычно не требуется, так как данные обновляются через handleAudioEvent.
      */
-   void updateCurrent() { if (m_currentScreen) m_currentScreen->refresh(); }
-    
-    // ==================== Делегирование событий энкодера ====================
-    
+    void updateCurrent()
+    {
+        if (m_currentScreen)
+        {
+            m_currentScreen->refresh();
+        }
+    }
+
+    // ==================== Энкодер ====================
+
     /**
-     * @brief Делегировать поворот вправо текущему экрану
+     * @brief Передать событие энкодера текущему экрану
      */
-    void onTurnRight(int enc_no)   { if (m_currentScreen) m_currentScreen->onTurnRight(enc_no); }
-    
-    /**
-     * @brief Делегировать поворот влево текущему экрану
-     */
-    void onTurnLeft(int enc_no)    { if (m_currentScreen) m_currentScreen->onTurnLeft(enc_no); }
-    
-    /**
-     * @brief Делегировать короткое нажатие текущему экрану
-     */
-    void onShortPress(int enc_no)  { if (m_currentScreen) m_currentScreen->onShortPress(enc_no); }
-    
-    /**
-     * @brief Делегировать долгое нажатие текущему экрану
-     */
-    void onLongPress(int enc_no)   { if (m_currentScreen) m_currentScreen->onLongPress(enc_no); }
-    
-    /**
-     * @brief Делегировать двойное нажатие текущему экрану
-     */
-    void onDoublePress(int enc_no) { if (m_currentScreen) m_currentScreen->onDoublePress(enc_no); }
-    
+    void handleEncoderEvent(const EncoderEvent& event)
+    {
+        if (m_currentScreen)
+        {
+            m_currentScreen->handleEncoderEvent(event);
+        }
+    }
+
 private:
-    // Приватный конструктор для синглтона
     ScreenManager() = default;
-    
-    // Запрещаем копирование
+
     ScreenManager(const ScreenManager&) = delete;
     ScreenManager& operator=(const ScreenManager&) = delete;
-    
-    std::vector<ScreenWithHandlers*> m_screens;      ///< Список всех экранов
-    int m_currentIndex = -1;             ///< Индекс текущего экрана
-    ScreenWithHandlers* m_currentScreen = nullptr;   ///< Указатель на текущий экран (кэш)
 
-    TopBar* m_topBar = nullptr;          ///< Указатель на верхнюю панель
-    BottomBar* m_bottomBar = nullptr;    ///< Указатель на нижнюю панель
+private:
+    std::vector<ScreenWithHandlers*> m_screens;
 
+    int m_currentIndex = -1;
+    ScreenWithHandlers* m_currentScreen = nullptr;
+
+    TopBar* m_topBar = nullptr;
+    BottomBar* m_bottomBar = nullptr;
 };
-
-#endif // UI_SCREEN_MANAGER_H

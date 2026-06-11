@@ -153,23 +153,61 @@ void EQScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void EQScreen::onTurnRight(int enc_no) {
-    int newValue = getCurrentBandValue() + 1;
-    if (newValue > MAX_VALUE) newValue = MAX_VALUE;
-    setCurrentBandValue(newValue);
-}
+void EQScreen::handleEncoderEvent(const EncoderEvent& event)
+{
 
-void EQScreen::onTurnLeft(int enc_no) {
-    int newValue = getCurrentBandValue() - 1;
-    if (newValue < MIN_VALUE) newValue = MIN_VALUE;
-    setCurrentBandValue(newValue);
-}
+    // Обработка по умолчанию
+    ScreenWithHandlers::handleEncoderEvent(event);
 
-void EQScreen::onShortPress(int enc_no) {
-    // Переключение на следующую полосу
-    m_currentBand = (Band)((m_currentBand + 1) % BAND_COUNT);
-    updateDisplay();
-    ESP_LOGD(TAG, "Switched to band: %s", BAND_NAMES[m_currentBand]);
+    // Пока используем только первый энкодер
+    if (event.encoderId != 1)
+        return;
+
+    switch (event.type)
+    {
+        case EncoderEventType::TurnRight:
+        {
+            int newValue = getCurrentBandValue() + 1;
+
+            if (newValue > MAX_VALUE)
+            {
+                newValue = MAX_VALUE;
+            }
+
+            setCurrentBandValue(newValue);
+            break;
+        }
+
+        case EncoderEventType::TurnLeft:
+        {
+            int newValue = getCurrentBandValue() - 1;
+
+            if (newValue < MIN_VALUE)
+            {
+                newValue = MIN_VALUE;
+            }
+
+            setCurrentBandValue(newValue);
+            break;
+        }
+
+        case EncoderEventType::ButtonShort:
+        {
+            // Переключение на следующую полосу
+            m_currentBand = (Band)((m_currentBand + 1) % BAND_COUNT);
+
+            updateDisplay();
+
+            ESP_LOGD(TAG,
+                     "Switched to band: %s",
+                     BAND_NAMES[m_currentBand]);
+
+            break;
+        }
+
+        default:
+            break;
+    }
 }
 
 // ==================== Вспомогательные методы ====================

@@ -116,32 +116,42 @@ void StationScreen::handleAudioEvent(const AudioToUIMessage& msg) {
 
 // ==================== Обработка событий энкодера ====================
 
-void StationScreen::onTurnLeft(int enc_no) {
-    // Следующая станция
-    int newIndex = m_currentStationIndex + 1;
-    if (newIndex >= STATIONS_COUNT) {
-        newIndex = 0;  // циклический переход
-    }
-    setCurrentStation(newIndex);
-}
-
-void StationScreen::onTurnRight(int enc_no) {
-    // Предыдущая станция
-    int newIndex = m_currentStationIndex - 1;
-    if (newIndex < 0) {
-        newIndex = STATIONS_COUNT - 1;  // циклический переход
-    }
-    setCurrentStation(newIndex);
-}
-
-void StationScreen::onShortPress(int enc_no) {
-
-    // Немедленное сохранение в NVS
-    NVSManager::getInstance().commit();  // немедленное сохранение
+void StationScreen::handleEncoderEvent(const EncoderEvent& event)
+{
+    // Обработка по умолчанию
+    ScreenWithHandlers::handleEncoderEvent(event);
     
-    // Возвращаемся на первый экран (VolumeScreen)
-    if (m_manager) {
-        m_manager->switchTo(0);
+    // Пока экран использует только энкодер №1
+    if (event.encoderId != 1)
+        return;
+
+    switch (event.type)
+    {
+        case EncoderEventType::TurnLeft:
+            setCurrentStation((m_currentStationIndex + 1) % STATIONS_COUNT);
+            break;
+
+        case EncoderEventType::TurnRight:
+            setCurrentStation(
+                (m_currentStationIndex - 1 + STATIONS_COUNT) % STATIONS_COUNT);
+            break;
+
+        case EncoderEventType::ButtonShort:
+        {
+            // Немедленное сохранение в NVS
+            NVSManager::getInstance().commit();
+
+            // Возвращаемся на первый экран (VolumeScreen)
+            if (m_manager)
+            {
+                m_manager->switchTo(0);
+            }
+
+            break;
+        }
+
+        default:
+            break;
     }
 }
 
